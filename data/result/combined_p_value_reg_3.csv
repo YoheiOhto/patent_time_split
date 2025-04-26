@@ -1,0 +1,7 @@
+0,1,2
+moleculenet + tdc regression 20% (mse),18.629138116680018,0.0
+moleculenet + tdc regression 20% (mae),18.310166132992254,0.0
+moleculenet + tdc regression 20% (r2),15.456302463456277,0.0
+moleculenet + tdc regression 30% (mse),20.40706759465408,0.0
+moleculenet + tdc regression 30% (mae),19.85442507393878,0.0
+moleculenet + tdc regression 30% (r2),17.07887919542192,0.0

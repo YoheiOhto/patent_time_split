@@ -1,0 +1,7 @@
+0,1,2
+moleculenet + tdc classification 20% (accuracy),19.512066140304643,0.0
+moleculenet + tdc classification 20% (f1),19.864486053834124,0.0
+moleculenet + tdc classification 20% (auroc),18.123420337707163,0.0
+moleculenet + tdc classification 30% (accuracy),22.711798663763062,0.0
+moleculenet + tdc classification 30% (f1),20.362743691965996,0.0
+moleculenet + tdc classification 30% (auroc),23.111327912657476,0.0

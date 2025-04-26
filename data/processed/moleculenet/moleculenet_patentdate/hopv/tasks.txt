@@ -1,0 +1,8 @@
+HOMO
+LUMO
+electrochemical_gap
+optical_gap
+PCE
+V_OC
+J_SC
+fill_factor
