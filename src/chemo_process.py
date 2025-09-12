@@ -42,3 +42,10 @@ def remove_isotopes(smiles_dict):
         cleaned_smiles = re.sub(r'\[\d+([A-Za-z]+)[+-]?[0-9]*\]', r'[\1]', smiles)
         data.append([smiles, cleaned_smiles, date])
     return data
+
+def compute_ecfp(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+    ecfp = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048)
+    return list(ecfp)

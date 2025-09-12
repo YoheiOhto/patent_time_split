@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="data:image/vnd.microsoft.icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA25g0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAERAAAAAAAAAREAAAAAAAABEQAAAAAAAAERAAAAAAAAARERERAAAAABEREREAAAAAEREREQAAAAAREAAAAAAAABEQAAAAAAAAEREREQAAAAARERERAAAAABEREREAAAAAAAAAAAAAAAAAAAAAAAD//wAA//8AAPH/AADx/wAA8f8AAPH/AADwDwAA8A8AAPAPAADx/wAA8f8AAPAPAADwDwAA8A8AAP//AAD//wAA" />
+    <title></title>
+    <script src="https://unpkg.com/lore-engine@1.1.10/dist/lore.min.js"></script>
+    <script src="https://unpkg.com/smiles-drawer@2.1.7/dist/smiles-drawer.min.js"></script>
+    <link 
+      rel="stylesheet" 
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.2/css/all.css" 
+      integrity="sha256-piqEf7Ap7CMps8krDQsSOTZgF+MU/0MPyPW2enj5I40=" 
+      crossorigin="anonymous" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:400,600"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+        height: 100%;
+        user-select: none;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      #lore {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+
+      #title {
+        position: absolute;
+        z-index: 9999;
+        pointer-events: none;
+        text-height: 1;
+        opacity: 0.0;
+        transition: opacity 0.5s ease-in;
+        
+          padding-bottom: 20px;
+        
+          font-size: 1.0em;
+        
+          color: #888888;
+        
+          font-family: 'Open Sans';
+        
+      }
+
+      #x-axis {
+        position: absolute;
+        z-index: 9999;
+        pointer-events: none;
+        text-height: 1;
+        opacity: 0.0;
+        transition: opacity 0.5s ease-in;
+        
+          padding-top: 20px;
+        
+          font-size: 0.7em;
+        
+          color: #888888;
+        
+          font-family: 'Open Sans';
+        
+      }
+
+      #y-axis {
+        position: absolute;
+        z-index: 9999;
+        pointer-events: none;
+        text-height: 1;
+        transition: opacity 0.5s ease-in;
+        
+          padding-bottom: 20px;
+        
+          font-size: 0.7em;
+        
+          color: #888888;
+        
+          font-family: 'Open Sans';
+        
+          transform: rotate(-90deg);
+        
+      }
+
+      #tip {
+        position: absolute;
+        z-index: 9999;
+        left: 10px;
+        top: 10px;
+        padding: 5px;
+        font-family: 'Open Sans';
+        background-color: rgba(255, 255, 255, 1.0);
+        border-radius: 2px;
+        border-left: 5px solid #000;
+        pointer-events: none;
+        opacity: 0.0;
+        transition: opacity 0.1s ease-out;
+        filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 1.0));
+      }
+
+      #tip.show {
+        opacity: 1.0;
+        transition: opacity 0.1s ease-out;
+      }
+
+      #tip-text {
+        position: relative;
+        
+        max-width: 250px;
+        
+        font-size: 0.8em;
+        font-weight: bold;
+        white-space: normal;
+        line-break: normal;
+      }
+
+      #hover-indicator {
+        display: none;
+        position: absolute;
+        z-index: 999;
+        border: 1px solid #fff;
+        background-color: rgba(255, 255, 255, 0.25);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      #hover-indicator.show {
+        display: block !important
+      }
+
+      .selected-indicator {
+        position: absolute;
+        z-index: 999;
+        pointer-events: none;
+      }
+
+      .selected-indicator .crosshair-x {
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        height: 2px;
+        width: 100%;
+        margin: auto;
+        
+          background-color: #fff;
+        
+      }
+
+      .selected-indicator .crosshair-y {
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        width: 2px;
+        height: 100%;
+        margin: auto;
+        
+          background-color: #fff;
+        
+      }
+
+      #legend {
+        position: absolute;
+        z-index: 9998;
+        
+          bottom: 10px;
+        
+          right: 10px;
+        
+          padding: 10px;
+        
+          border: 1px solid #262626;
+        
+          border-radius: 2px;
+        
+          background-color: #111111;
+        
+          filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.5));
+        
+          color: #eeeeee;
+        
+          font-family: 'Open Sans';
+        
+      }
+
+      #legend .container {
+        display: flex;
+        flex: auto;
+        align-items: flex-start;
+        
+        flex-direction: column;
+        
+      }
+
+      #legend .legend-section {
+        width: 100%;
+      }
+
+      #legend .legend-section:not(:first-child) {
+        
+      }
+
+      #legend h2 {
+        font-size: 1em;
+        font-weight: 600;
+        padding-top: 0;
+        margin-top: 0;
+        margin-bottom: 5px;
+        text-align: center;
+        max-width: 250px;
+        white-space: normal;
+      }
+
+      #legend h3 {
+        font-size: 0.8em;
+        margin-top: 10px;
+        margin-bottom: 0px;
+        max-width: 250px;
+        white-space: normal;
+      }
+
+      #legend select {
+        width: 100%;
+        margin-bottom: 5px;
+        background: transparent;
+        color: #fff;
+        border-radius: 2px;
+        font-size: 0.75em;
+      }
+
+      #legend select option {
+        background: #000;
+      }
+
+      #legend .legend-element, #legend .legend-element-range {
+        position: relative;
+        display: flex;
+        flex: auto;
+        align-items: flex-start;
+        padding-bottom: 2px;
+        padding-top: 2px;
+      }
+
+      #legend .legend-element {
+        align-items: flex-start;
+      }
+
+      #legend .legend-element-range {
+        flex-direction: column;
+      }
+
+      #legend .color-box {
+        
+          width: 15px;
+        
+          height: 15px;
+        
+          border: solid 0px;
+        
+      }
+
+      #legend .color-stripe {
+        
+          width: 15px;
+        
+          height: 1px;
+        
+          border: solid 0px;
+        
+      }
+
+      #legend .legend-label {
+        height: 15px;
+        font-size: 0.7em;
+        padding-left: 5px;
+      }
+
+      #legend .legend-label.max {
+        position: absolute;
+        top: 0px;
+        margin-left: 15px;
+      }
+
+      #legend .legend-label.min {
+        position: absolute;
+        bottom: 2px;
+        margin-left: 15px;
+      }
+
+      #selected {
+        position: absolute;
+        display: none;
+        z-index: 9998;
+        width: 250px;
+        
+          bottom: 10px;
+        
+          left: 10px;
+        
+          padding: 0px;
+        
+          border: 1px solid #262626;
+        
+          border-radius: 2px;
+        
+          background-color: #111111;
+        
+          filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.5));
+        
+          color: #eeeeee;
+        
+          font-family: 'Open Sans';
+        
+      }
+
+      #selected #selected-controls {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 5px 10px;
+        border-bottom: 1px solid #262626;
+        font-size: 0.8em;
+        font-weight: bold;
+      }
+
+      #selected #selected-controls * {
+        display: inline-block;
+      }
+
+      #selected #selected-controls #selected-title {
+        flex-grow: 1;
+        white-space: nowrap; 
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #aaa;
+      }
+
+      #selected #selected-controls a {
+        margin: 0px 2px;
+        font-size: 1.5em;
+        color: #fff;
+        opacity: 0.75;
+        transition: 0.2s;
+      }
+
+      #selected #selected-controls a:hover {
+        opacity: 1.0;
+      }
+
+      #selected #selected-controls a#selected-remove {
+        position: absolute;
+        right: 10px;
+        top: 42px;
+        color: #e74c3c;
+      }
+
+      #selected #selected-container {
+        padding: 10px;
+        font-size: 0.8em;
+      }
+
+      #selected #selected-container img {
+        margin-left: -10px;
+      }
+
+      #selected #selected-container .label {
+        font-weight: bold;
+        color: #aaa;
+        font-size: 0.7em;
+      }
+
+      #selected #selected-container .label:not(:first-child) {
+        margin-top: 2px;
+      }
+
+      #selected #selected-container .content {
+        white-space: nowrap; 
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      #selected #selected-container .content a {
+        text-decoration: none;
+        color: #3498db;
+      }
+
+      #controls {
+        position: absolute;
+        z-index: 9998;
+        
+          top: 10px;
+        
+          right: 10px;
+        
+          padding: 2px;
+        
+          border: 1px solid #262626;
+        
+          border-radius: 2px;
+        
+          background-color: #111111;
+        
+          filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.5));
+        
+          color: #eeeeee;
+        
+          font-family: 'Open Sans';
+        
+      }
+
+      #controls a {
+        display: inline-block;
+        padding: 5px 10px;
+        font-size: 1.2em;
+        color: #fff;
+        opacity: 0.75;
+        transition: 0.2s;
+      }
+
+      #controls a:hover {
+        opacity: 1.0;
+      }
+
+      #controls #more-controls {
+        display: inline-block;
+      }
+
+      #impress {
+        position: absolute;
+        z-index: 9999;
+        top: 10px;
+        left: 10px;
+        font-size: 0.7em;
+        color: #eee;
+      }
+
+      #impress a {
+        color: #3498db;
+        text-decoration: none;
+      }
+
+      #overlay-structure-container {
+        position: absolute;
+        z-index: 9999;
+        top: 50px;
+        left: 275px;
+        right: 100px;
+        bottom: 10px;
+        opacity: .5;
+        pointer-events: none;
+      }
+
+      #overlay-structure {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: auto;
+        margin-bottom: auto;
+      }
+
+
+
+
+
+      .show {
+        opacity: 1.0 !important;
+      }
+
+      .hide {
+        display: none !important;
+      }
+
+      @media only screen and (max-width: 600px) {
+        #selected {
+          position: absolute;
+          display: none;
+          z-index: 9998;
+          width: 125px;
+          opacity: 0.8;
+          background-filter: blur(10px);
+        }
+
+        #selected img {
+          width: 125px;
+        }
+
+        #tip {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    
+    
+    
+    
+
+    <div id="overlay-structure-container" data-binding-id="overlayStructureContainer" class="">
+      <canvas id="overlay-structure" data-binding-id="overlayStructure" width="450" height="687">
+
+      </canvas></div>
+    </div>
+
+    <div id="tip" data-bind="tip">
+      <div id="tip-text" data-bind="tipText"></div>
+    </div>
+    <div id="selected" data-bind="selected">
+      <div id="selected-controls" data-bind="selectedControls">
+        <a id="selected-toggle" data-bind="selectedToggle" href="#">
+          <i class="fas fa-toggle-on"></i>
+        </a>
+        <span>&nbsp;&nbsp;</span>
+        <span id="selected-title" data-bind="selectedTitle"></span>
+        <span>&nbsp;&nbsp;</span>
+        <span id="selected-current" data-bind="selectedCurrent" data-bind="selectedCurrent">0</span><span> / </span><span id="selected-total" data-bind="selectedTotal">0</span>
+        <span>&nbsp;&nbsp;</span>
+        <a id="selected-prev" data-bind="selectedPrev" href="#">
+          <i class="fas fa-angle-left"></i>
+        </a>
+        <span>&nbsp;</span>
+        <a id="selected-next" data-bind="selectedNext" href="#">
+          <i class="fas fa-angle-right"></i>
+        </a>
+        <a id="selected-remove" data-bind="selectedRemove" href="#">
+          <i class="fas fa-times"></i>
+        </a>
+      </div>
+      <div id="selected-container" data-bind="selectedContainer">
+      </div>
+    </div>
+    <div id="controls" data-bind="controls">
+      <div id="more-controls" data-bind="moreControls" class="hide">
+        <a id="search" data-bind="search" href="#">
+          <i class="fas fa-search"></i>
+        </a>
+        <a id="download" data-bind="download" href="#">
+          <i class="fas fa-download"></i>
+        </a>
+        <a id="export" data-bind="export" href="#">
+          <i class="fas fa-camera"></i>
+        </a>
+        <a id="largepreview" data-bind="largepreview" href="#">
+          <i class="fas fa-expand"></i>
+        </a>
+      </div>
+      <a id="show-controls" data-bind="showControls" href="#">
+        <i class="fas fa-bars"></i>
+      </a>
+    </div>
+    <div id="hover-indicator" data-bind="hoverIndicator"></div>
+    <canvas id="lore"></canvas>
+
+    
+    <script>
+      const data = {
+DILI: {
+x: [57.74,90.194,217.519,189.567,259.355,558.795,576.17,705.743,705.961,123.848,122.108,549.736,81.604,78.177,457.979,47.518,244.508,81.418,346.719,327.52,635.955,565.304,742.38,406.478,362.627,285.849,101.868,214.869,320.567,705.069,153.283,600.597,66.005,467.402,47.454,372.583,204.281,111.638,750.0,371.26,55.715,72.592,195.796,424.557,205.718,44.496,372.383,38.824,325.162,204.29,200.013,86.817,209.458,85.544,331.786,251.784,160.602,319.073,211.861,293.093,126.114,72.338,556.85,380.199,166.596,425.392,224.057,236.147,389.687,748.826,610.714,177.208,324.935,449.867,78.989,720.364,187.476,288.966,333.025,336.871,295.689,539.334,324.337,692.117,250.927,13.788,0.0,110.442,186.695,563.966,671.257,178.906,649.398,384.837,572.981,231.346,337.214,428.743,745.186,275.613,179.368,746.985,336.906,325.647,625.732,396.248,413.227,326.185,153.158,4.652,324.915,279.849,395.828,394.379,42.179,409.899,329.791,308.774,185.785,209.225,12.521,528.165,356.185,623.625,233.532,157.227,341.427,315.351,652.532,387.506,328.023,528.635,97.075,224.968,642.746,49.196,331.53,136.068,132.715,25.575,104.232,139.574,255.101,239.322,230.75,544.048,330.795,437.102,545.605,77.812,475.816,271.556,568.517,720.975,483.238,465.499,482.496,406.904,116.197,337.457,675.64,388.225,42.941,456.11,173.855,358.04,385.456,701.722,661.656,689.624,399.069,643.706,148.466,550.393,719.469,316.539,204.897,268.828,298.22,70.221,93.311,95.139,54.2,90.364,411.692,166.534,396.571,227.298,479.106,348.973,126.933,321.659,85.573,90.237,163.387,557.578,366.316,372.321,100.267,86.666,121.735,193.629,75.604,564.806,141.813,447.405,544.226,556.329,156.409,690.952,618.026,457.818,538.042,523.15,643.047,736.47,337.167,699.882,695.958,554.984,339.652,354.187,670.853,557.149,658.108,343.567,663.463,83.272,208.34,544.494,548.851,706.095,396.108,297.164,269.909,357.186,118.959,278.313,232.213,409.517,93.132,393.379,703.643,552.678,531.754,425.416,42.234,93.89,481.637,662.642,228.732,735.892,267.834,613.918,549.595,398.827,709.717,622.915,118.536,562.274,656.857,400.872,324.596,198.003,366.802,711.841,342.279,196.278,569.761,196.104,417.102,704.5,335.614,471.812,361.022,174.503,552.519,209.277,650.242,551.978,575.739,555.993,548.909,175.636,531.952,413.96,707.672,235.739,171.93,627.737,579.05,650.368,667.162,588.642,183.033,662.792,141.949,221.196,303.596,200.253,702.879,631.285,378.069,286.574,699.735,737.753,589.755,733.008,644.748,398.927,621.16,281.992,9.905,518.847,703.107,272.027,84.584,640.165,533.811,190.733,339.805,142.86,562.891,150.081,398.749,226.899,305.731,311.224,703.562,690.609,702.612,44.807,714.671,275.346,684.758,749.508,54.6,80.721,86.634,428.87,415.553,368.356,140.167,262.688,125.103,125.911,609.753,82.082,461.134,477.961,235.419,167.719,284.146,560.102,168.81,280.79,356.104,687.594,655.978,554.444,274.708,286.476,175.474,476.99,120.87,79.115,218.209,473.953,596.737,398.637,618.387,656.554,358.585,264.172,322.045,239.15,506.889,125.316,547.362,368.372,643.135,335.078,297.055,362.797,103.583,316.059,235.76,291.902,566.667,634.329,177.584,553.071,82.113,540.743,218.373,338.038,167.051,328.574,330.58,325.702,320.384,316.801,321.269,327.762,168.669,383.255,115.745,84.757,336.615,380.134,391.733,308.966,122.262,560.982,319.61,118.429,105.259,555.106,249.377,320.785,290.481,281.252,725.045,401.025,571.07,218.951,263.324],
+y: [468.653,648.736,203.106,4.365,436.126,155.801,273.955,585.137,579.532,65.945,61.829,123.845,511.02,514.939,750.0,671.609,185.817,77.479,282.672,394.26,306.957,145.805,240.729,704.616,538.67,294.318,638.968,197.017,685.576,266.182,271.923,198.179,666.229,341.849,462.659,652.005,338.737,623.281,253.681,562.559,465.359,503.411,201.844,716.416,505.219,458.077,250.196,72.537,562.305,343.231,506.89,64.629,339.26,79.652,396.886,99.046,101.477,556.356,191.878,524.838,275.964,59.446,159.528,550.742,102.192,720.819,258.058,496.955,633.506,258.556,194.362,513.269,675.181,739.547,662.016,254.998,9.353,347.803,652.99,652.318,580.898,218.039,575.275,280.881,308.254,84.288,91.671,278.307,128.58,150.348,476.953,139.088,293.807,643.314,276.388,325.982,598.728,340.808,255.163,158.375,28.021,232.365,322.396,305.511,340.661,350.123,537.438,361.091,70.388,89.124,570.434,62.77,684.952,715.428,692.782,541.695,377.897,572.451,132.243,157.391,88.516,30.189,551.409,343.99,322.878,270.934,324.444,553.297,317.785,637.562,559.568,273.726,495.615,134.816,497.371,682.473,314.801,570.859,572.512,78.584,637.08,577.664,176.978,115.454,492.586,219.243,391.223,727.624,122.737,503.321,370.849,161.811,149.94,260.152,393.981,344.738,309.327,551.728,519.555,327.377,280.263,728.481,670.37,744.903,268.293,554.742,666.527,256.55,326.004,272.382,547.67,314.838,522.489,217.485,250.729,689.889,202.778,438.97,294.621,475.736,25.619,21.094,66.105,32.564,554.077,42.309,358.819,129.03,381.352,632.719,590.917,563.522,74.306,64.335,48.956,187.376,561.446,647.982,497.738,503.995,511.803,268.678,655.898,37.069,581.927,736.852,42.474,7.473,101.214,495.147,314.446,329.051,44.628,25.446,388.425,249.191,279.636,488.631,558.646,256.773,215.782,265.174,480.883,254.338,322.898,286.736,457.24,480.873,344.699,72.858,25.144,568.335,642.401,524.678,487.364,558.465,608.088,441.739,194.733,703.472,649.262,352.024,572.098,11.797,32.414,340.622,462.362,53.457,389.279,453.642,124.88,252.822,167.712,515.745,20.961,684.137,571.205,189.667,516.122,220.036,430.772,644.252,671.091,510.884,540.632,479.78,282.425,265.639,35.54,504.998,695.461,552.835,381.521,357.859,357.769,515.112,220.5,188.505,411.434,6.056,211.478,39.593,70.459,31.004,272.69,698.631,482.838,318.823,144.144,505.457,275.887,297.183,481.725,204.254,18.239,288.505,546.459,329.859,322.378,262.561,486.848,504.787,241.474,587.047,556.319,521.384,200.481,520.753,311.503,715.08,511.177,590.213,82.367,21.927,260.795,72.907,485.039,395.384,46.111,201.135,383.905,549.83,216.581,71.687,363.022,490.177,295.069,677.633,535.172,277.048,516.3,688.905,518.255,70.971,500.954,227.737,673.709,0.0,31.426,715.991,541.443,566.359,273.774,85.191,508.655,59.467,518.418,12.772,746.274,343.408,508.097,146.667,59.206,97.106,99.067,57.352,261.245,498.266,489.679,154.558,440.793,351.522,138.113,337.926,57.254,657.945,332.41,341.173,294.793,719.645,191.435,434.325,266.249,168.526,270.56,494.669,290.967,594.44,43.212,251.961,393.24,394.081,520.534,544.131,490.392,675.176,503.625,582.574,95.847,365.293,267.154,98.165,5.474,74.49,208.268,656.374,49.251,219.101,228.84,247.922,238.282,241.893,242.83,213.514,38.394,239.136,277.51,16.367,220.642,235.897,723.987,294.739,276.707,187.707,294.672,63.915,485.708,126.081,305.267,691.219,294.459,394.445,519.695,639.893,95.012,212.292,437.259],
+z: [375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0],
+labels: ['CC(=O)OCC[N+](C)(C)C','O=C(NC(CO)C(O)c1ccc([N+](=O)[O-])cc1)C(Cl)Cl','O=C(O)c1ccccc1O','CC(NC(C)(C)C)C(=O)c1cccc(Cl)c1','OCC(O)C(O)C(O)C(O)CO','NCCCCCC(=O)O','NCCc1ccc(O)c(O)c1','ClC1C(Cl)C(Cl)C(Cl)C(Cl)C1Cl','OC1C(O)C(O)C(O)C(O)C1O','O=C(O)c1cccnc1','Nc1ccc(C(=O)O)cc1','CC(C)(CO)C(O)C(=O)NCCC(=O)O','Cc1ncc(CO)c(CO)c1O','Cc1ncc(C[n+]2csc(CCO)c2C)c(N)n1','O=C1NC(=O)C(c2ccccc2)(c2ccccc2)N1','Oc1cccc2cccnc12','Nc1c2c(nc3ccccc13)CCCC2','CC(=O)c1ccc(S(=O)(=O)NC(=O)NC2CCCCC2)cc1','Cc1c2oc3c(C)ccc(C(=O)NC4C(=O)NC(C(C)C)C(=O)N5CCCC5C(=O)N(C)CC(=O)N(C)C(C(C)C)C(=O)OC4C)c3nc-2c(C(=O)NC2C(=O)NC(C(C)C)C(=O)N3CCCC3C(=O)N(C)CC(=O)N(C)C(C(C)C)C(=O)OC2C)c(N)c1=O','CCCSc1ccc2nc(NC(=O)OC)[nH]c2c1','CC(C)(C)NCC(O)c1ccc(O)c(CO)c1','NC12CC3CC(CC(C3)C1)C2','CC(=O)Nc1c(I)c(NC(C)=O)c(I)c(C(=O)O)c1I','CCC1(c2ccc(N)cc2)CCC(=O)NC1=O','CN(C)CCC=C1c2ccccc2CCc2ccccc21','CCN(CC)Cc1cc(Nc2ccnc3cc(Cl)ccc23)ccc1O','COc1cc(NS(C)(=O)=O)ccc1Nc1c2ccccc2nc2ccccc12','CC(=O)Oc1ccccc1C(=O)O','COc1ccc(CCN2CCC(Nc3nc4ccccc4n3Cc3ccc(F)cc3)CC2)cc1','CC(C)NCC(O)COc1ccc(CC(N)=O)cc1','Cn1cnc([N+](=O)[O-])c1Sc1ncnc2nc[nH]c12','O=C(O)COc1nn(Cc2ccccc2)c2ccccc12','CCc1oc2ccccc2c1C(=O)c1cc(Br)c(O)c(Br)c1','CC(Cc1ccccc1)N(C)Cc1ccccc1','CC(C[N+](C)(C)C)OC(N)=O','OC(CCN1CCCCC1)(c1ccccc1)C1CC2C=CC1C2','Oc1c(Cl)cc(Cl)cc1Sc1cc(Cl)cc(Cl)c1O','CCCCNc1cc(C(=O)O)cc(S(N)(=O)=O)c1Oc1ccccc1','CCCCN1CCCCC1C(=O)Nc1c(C)cccc1C','O=C1CC2(CCCC2)CC(=O)N1CCCCN1CCN(c2ncccn2)CC1','CS(=O)(=O)OCCCCOS(C)(=O)=O','COc1ccc(CCN(C)CCCC(C#N)(c2ccc(OC)c(OC)c2)C(C)C)cc1OC','NC(=O)N1c2ccccc2C=Cc2ccccc21','CCN(CC)CCOCCOC(=O)C1(c2ccccc2)CCCC1','CN(C)CCOC(c1ccc(Cl)cc1)c1ccccn1','CCCC(C)(COC(N)=O)COC(=O)NC(C)C','CC1=C(C(=O)O)N2C(=O)C(NC(=O)C(N)c3ccc(O)cc3)C2SC1','Cc1ccc(-c2cc(C(F)(F)F)nn2-c2ccc(S(N)(=O)=O)cc2)cc1','CN1CCN(C(c2ccccc2)c2ccc(Cl)cc2)CC1','CN1C(=O)CCS(=O)(=O)C1c1ccc(Cl)cc1','CN(C)CCC(c1ccc(Cl)cc1)c1ccccn1','CCCNC(=O)NS(=O)(=O)c1ccc(Cl)cc1','O=c1[nH]c2cc(Cl)ccc2o1','Cc1cc(C2CCCCC2)n(O)c(=O)c1','O=C1CCc2cc(OCCCCc3nnnn3C3CCCCC3)ccc2N1','O=C(O)c1cn(C2CC2)c2cc(N3CCNCC3)c(F)cc2c1=O','Clc1cccc(Cl)c1NC1=NCCN1','CN1CCN(C2=c3ccccc3=Nc3ccc(Cl)cc3N2)CC1','CC(=O)Oc1ccc(C(=C2CCCCC2)c2ccc(OC(C)=O)cc2)cc1','CN1CCC(=C2c3ccccc3C=Cc3ccccc32)CC1','O=C1CN(N=Cc2ccc(-c3ccc([N+](=O)[O-])cc3)o2)C(=O)N1','Nc1ccc(S(=O)(=O)c2ccc(N)cc2)cc1','CC(=O)N(O)CCCCCNC(=O)CCC(=O)N(O)CCCCCNC(=O)CCC(=O)N(O)CCCCCN','CNCCCN1c2ccccc2CCc2ccccc21','O=C(O)Cc1ccccc1Nc1c(Cl)cccc1Cl','CCN(CC)CCOC(=O)C1(C2CCCCC2)CCCCC1','O=C(O)c1cc(-c2ccc(F)cc2F)ccc1O','CN(C)CCOC(c1ccccc1)c1ccccc1','OCCN(CCO)c1nc(N2CCCCC2)c2nc(N(CCO)CCO)nc(N3CCCCC3)c2n1','CCN(CC)C(=S)SSC(=S)N(CC)CC','COc1cc2c(cc1OC)C(=O)C(CC1CCN(Cc3ccccc3)CC1)C2','CN(C)CCOC(C)(c1ccccc1)c1ccccn1','O=C(CCCN1CC=C(n2c(=O)[nH]c3ccccc32)CC1)c1ccc(F)cc1','CC[N+](C)(C)c1cccc(O)c1','CCc1cccc2c3c([nH]c12)C(CC)(CC(=O)O)OCC3','N#CC(C#N)=NNc1ccc(OC(F)(F)F)cc1','CC(C)OC(=O)C(C)(C)Oc1ccc(C(=O)c2ccc(Cl)cc2)cc1','CC(C(=O)O)c1cccc(Oc2ccccc2)c1','CCC(=O)N(c1ccccc1)C1CCN(CCc2ccccc2)CC1','CC(C)(C(=O)O)c1ccc(C(O)CCCN2CCC(C(O)(c3ccccc3)c3ccccc3)CC2)cc1','O=C(COc1ccc(Cl)cc1)N1CCN(Cc2ccc3c(c2)OCO3)CC1','Cc1c(-c2ccccc2)oc2c(C(=O)OCCN3CCCCC3)cccc2c1=O','OC(Cn1cncn1)(Cn1cncn1)c1ccc(F)cc1F','CNCCC(Oc1ccc(C(F)(F)F)cc1)c1ccccc1','CC(C(=O)O)c1ccc(-c2ccccc2)c(F)c1','CC(C)C(=O)Nc1ccc([N+](=O)[O-])c(C(F)(F)F)c1','COCCCCC(=NOCCN)c1ccc(C(F)(F)F)cc1','O=C1OCCN1N=Cc1ccc([N+](=O)[O-])o1','NS(=O)(=O)c1cc(C(=O)O)c(NCc2ccco2)cc1Cl','NCC1(CC(=O)O)CCCCC1','CNC(C)C1CCC(N)C(OC2C(N)CC(N)C(OC3OCC(C)(O)C(NC)C3O)C2O)O1','O=C(OCC(O)CO)c1ccccc1Nc1ccnc2cc(Cl)ccc12','COc1ccccc1OCC(O)CO','NC(N)=NCCN1CCCCCCC1','CCCCCCc1ccc(O)cc1O','NS(=O)(=O)c1cc2c(cc1Cl)NCNS2(=O)=O','OCCOCCN1CCN(C(c2ccccc2)c2ccc(Cl)cc2)CC1','NNCCc1ccccc1','CCN(CC)CC(=O)Nc1c(C)cccc1C','Nc1cc(-c2ccncc2)c[nH]c1=O','COc1ccc2c(c1)c(CC(=O)O)c(C)n2C(=O)c1ccc(Cl)cc1','CC(=O)N(CC(O)CN(C(C)=O)c1c(I)c(C(=O)NCC(O)CO)c(I)c(C(=O)NCC(O)CO)c1I)c1c(I)c(C(=O)NCC(O)CO)c(I)c(C(=O)NCC(O)CO)c1I','CC(C)NNC(=O)c1ccncc1','Cc1cc(C(=O)NNCc2ccccc2)no1','CC(C)NCC(O)c1ccc(O)c(O)c1','CC(COc1ccccc1)NC(C)C(O)c1ccc(O)cc1','CNC1(c2ccccc2Cl)CCCCC1=O','CC(C(=O)O)c1cccc(C(=O)c2ccccc2)c1','O=C(c1ccccc1)c1ccc2n1CCC2C(=O)O','Cc1oncc1C(=O)Nc1ccc(C(F)(F)F)cc1','N#Cc1ccc(C(c2ccc(C#N)cc2)n2cncn2)cc1','CCn1cc(C(=O)O)c(=O)c2cc(F)c(N3CCNC(C)C3)c(F)c21','CN(C)C(=O)C(CCN1CCC(O)(c2ccc(Cl)cc2)CC1)(c1ccccc1)c1ccccc1','CCOC(=O)N1CCC(=C2c3ccc(Cl)cc3CCc3cccnc32)CC1','CCCCc1nc(Cl)c(CO)n1Cc1ccc(-c2ccccc2-c2nn[nH]n2)cc1','CNCCCC12CCC(c3ccccc31)c1ccccc12','COC(=O)Nc1nc2ccc(C(=O)c3ccccc3)cc2[nH]1','Cc1cccc(CN2CCN(C(c3ccccc3)c3ccc(Cl)cc3)CC2)c1','Cc1ccc(Cl)c(Nc2ccccc2C(=O)O)c1Cl','Cc1cccc(Nc2ccccc2C(=O)O)c1C','OC(c1cc(C(F)(F)F)nc2c(C(F)(F)F)cccc12)C1CCCCN1','CC12CC3CC(C)(C1)CC(N)(C3)C2','CN1CCCCC1CCN1c2ccccc2Sc2ccc(S(C)=O)cc21','CC(C)NCC(O)c1cc(O)cc(O)c1','Cc1ccccc1N1C(=O)c2cc(S(N)(=O)=O)c(Cl)cc2NC1C','Cc1ncc([N+](=O)[O-])n1CCO','CC(C)(C(=O)c1cccnc1)c1cccnc1','Cc1ncc2n1-c1ccc(Cl)cc1C(c1ccccc1F)=NC2','COc1ccc(OC)c(C(O)CNC(=O)CN)c1','N=c1nc(N2CCCCC2)cc(N)n1O','Clc1ccc(C(c2ccccc2Cl)C(Cl)Cl)cc1','O=C1c2c(O)ccc(O)c2C(=O)c2c(NCCNCCO)ccc(NCCNCCO)c21','CC(=O)Oc1cc(C(C)C)c(OCCN(C)C)cc1C','CCn1cc(C(=O)O)c(=O)c2ccc(C)nc21','NCC1OC(OC2C(CO)OC(OC3C(O)C(N)CC(N)C3OC3OC(CN)C(O)C(O)C3N)C2O)C(N)C(O)C1O','Cc1ccnc2c1NC(=O)c1cccnc1N2C1CC1','O=C(CCNNC(=O)c1ccncc1)NCc1ccccc1','COC(=O)C1=C(C)NC(C)=C(C(=O)OCCN(C)Cc2ccccc2)C1c1cccc([N+](=O)[O-])c1','COC(=O)C1=C(C)NC(C)=C(C(=O)OC)C1c1ccccc1[N+](=O)[O-]','CC1(C)NC(=O)N(c2ccc([N+](=O)[O-])c(C(F)(F)F)c2)C1=O','CS(=O)(=O)Nc1ccc([N+](=O)[O-])cc1Oc1ccccc1','COCCOC(=O)C1=C(C)NC(C)=C(C(=O)OC(C)C)C1c1cccc([N+](=O)[O-])c1','CN1Cc2c(N)cccc2C(c2ccccc2)C1','CCn1cc(C(=O)O)c(=O)c2cc(F)c(N3CCNCC3)cc21','Cc1ccccc1C(OCCN(C)C)c1ccccc1','O=C(O)CCc1nc(-c2ccccc2)c(-c2ccccc2)o1','CCCOc1ccc2nc(NC(=O)OC)[nH]c2c1','CCN(CC)CC#CCOC(=O)C(O)(c1ccccc1)C1CCCCC1','CC(C)(CO)C(O)C(=O)NCCCO','COc1ccc(Cc2nccc3cc(OC)c(OC)cc23)cc1OC','C#CCN(C)Cc1ccccc1','NC1=NC(=O)C(c2ccccc2)O1','C1CCC(C(CC2CCCCN2)C2CCCCC2)CC1','CCOc1ccc(NC(C)=O)cc1','Nc1ccc(N=Nc2ccccc2)c(N)n1','CC(COc1ccccc1)N(CCCl)Cc1ccccc1','CC(C)(N)Cc1ccccc1','CCCCC1C(=O)N(c2ccccc2)N(c2ccccc2)C1=O','CC(=CCC1=C(C)C(=O)c2ccccc2C1=O)CCCC(C)CCCC(C)CCCC(C)C','CC(N=C(NC#N)Nc1ccncc1)C(C)(C)C','CC(C)NCC(O)COc1cccc2[nH]ccc12','O=C(C1CCCCC1)N1CC(=O)N2CCc3ccccc3C2C1','COc1cc(NC(C)CCCN)c2ncccc2c1','CCC1(c2ccccc2)C(=O)NCNC1=O','CC(C)(Sc1cc(C(C)(C)C)c(O)c(C(C)(C)C)c1)Sc1cc(C(C)(C)C)c(O)c(C(C)(C)C)c1','CN1CCN(CCCN2c3ccccc3Sc3ccc(Cl)cc32)CC1','OC(CCN1CCCC1)(c1ccccc1)C1CCCCC1','CCCNCC(O)COc1ccccc1C(=O)CCc1ccccc1','CC(C)c1cccc(C(C)C)c1O','CC(C)NCC(O)COc1cccc2ccccc12','CNCCCC1c2ccccc2C=Cc2ccccc21','CN(C)C(=O)Oc1ccc[n+](C)c1','COc1ccc(CN(CCN(C)C)c2ccccn2)cc1','CCc1nc(N)nc(N)c1-c1ccc(Cl)cc1','Nc1nc2ccc(OC(F)(F)F)cc2s1','Cc1nc2n(c(=O)c1CCN1CCC(c3noc4cc(F)ccc34)CC1)CCCC2','NC(=O)c1ccccc1O','CN1C2CC(OC(=O)C(CO)c3ccccc3)CC1C1OC12','Cc1ccc(NC(=O)c2ccc(CN3CCN(C)CC3)cc2)cc1Nc1nccc(-c2cccnc2)n1','C[N+](C)(C)CCOC(=O)CCC(=O)OCC[N+](C)(C)C','Cc1nnc(NS(=O)(=O)c2ccc(N)cc2)s1','Cc1cc(NS(=O)(=O)c2ccc(N)cc2)no1','Nc1ccc(S(N)(=O)=O)cc1','Nc1ccc(S(=O)(=O)Nc2nccs2)cc1','O=C1C(CCS(=O)c2ccccc2)C(=O)N(c2ccccc2)N1c1ccccc1','CC1=C(CC(=O)O)c2cc(F)ccc2C1=Cc1ccc(S(C)=O)cc1','CCCCCCCCNC(C)C(O)c1ccc(SC(C)C)cc1','Cn1nnc2c(C(N)=O)ncn2c1=O','CN(CC=CC#CC(C)(C)C)Cc1cccc2ccccc12','CC(C)(C)c1ccc(C(O)CCCN2CCC(C(O)(c3ccccc3)c3ccccc3)CC2)cc1','CCCCNc1ccc(C(=O)OCCN(C)C)cc1','Clc1ccccc1CN1CCc2sccc2C1','Cc1ccc(S(=O)(=O)NC(=O)NN2CCCCCC2)cc1','CCCCNC(=O)NS(=O)(=O)c1ccc(C)cc1','Cc1ccc(C(=O)c2ccc(CC(=O)O)n2C)cc1','NCC1CCC(C(=O)O)CC1','O=c1n(CCCN2CCN(c3cccc(Cl)c3)CC2)nc2ccccn12','OC(CCN1CCCCC1)(c1ccccc1)C1CCCCC1','COc1cc(C(=O)NCc2ccc(OCCN(C)C)cc2)cc(OC)c1OC','COc1cc(Cc2cnc(N)nc2N)cc(OC)c1OC','Cc1c(C)c2c(c(C)c1O)CCC(C)(COc1ccc(CC3SC(=O)NC3=O)cc1)O2','COc1cc(C(=O)NS(=O)(=O)c2ccccc2C)ccc1Cc1cn(C)c2ccc(NC(=O)OC3CCCC3)cc12','NS(=O)(=O)Cc1noc2ccccc12','CC1CC2C3CCC4=CC(=O)C=CC4(C)C3(F)C(O)CC2(C)C1(O)C(=O)CO','COC12C(COC(N)=O)C3=C(C(=O)C(C)=C(N)C3=O)N1CC1NC12','CC[N+](C)(CC)CCOC(=O)C(O)(c1ccccc1)C1CCCCC1','CC12CCC(=O)C=C1CCC1C2C(O)CC2(C)C1CCC2(O)C(=O)CO','CC12CCC3c4ccc(O)cc4CCC3C1CCC2O','Cc1ccc(N(CC2=NCCN2)c2cccc(O)c2)cc1','O=c1[nH]c(=O)n(C2CC(O)C(CO)O2)cc1F','CNCC(O)c1ccc(O)c(O)c1','CC(N)Cc1ccccc1','CC12C=CC(=O)C=C1CCC1C2C(=O)CC2(C)C1CCC2(O)C(=O)CO','CC12COC(=O)CC1CCC1C2CCC2(C)C1CCC2(C)O','COc1ccc(CC(N)C(=O)NC2C(CO)OC(n3cnc4c(N(C)C)ncnc43)C2O)cc1','CC(=O)Nc1ccc2c(c1)Cc1ccccc1-2','CC1(C)SC2C(NC(=O)Cc3ccccc3)C(=O)N2C1C(=O)O','O=c1[nH]c(=O)n(C2CC(O)C(CO)O2)cc1I','CCC1C(=O)OCC1Cc1cncn1C','NC(Cc1cc(I)c(Oc2ccc(O)c(I)c2)c(I)c1)C(=O)O','CNC(=O)Oc1ccc2c(c1)C1(C)CCN(C)C1N2C','CC(=O)OCC1=C(C(=O)O)N2C(=O)C(NC(=O)Cc3cccs3)C2SC1','NCC1OC(OC2C(N)CC(N)C(OC3OC(CO)C(O)C(N)C3O)C2O)C(O)C(O)C1O','NC(Cc1ccc(O)c(O)c1)C(=O)O','COc1ccc(OC)c(C(O)C(C)N)c1','Cc1onc(-c2ccccc2Cl)c1C(=O)NC1C(=O)N2C1SC(C)(C)C2C(=O)O','OCC1OC(OC2C(CO)OC(O)C(O)C2O)C(O)C(O)C1O','COc1cc2c(c(OC)c1OC)-c1ccc(OC)c(=O)cc1C(NC(C)=O)CC2','O=c1[nH]cc(N(CCCl)CCCl)c(=O)[nH]1','C=C1CCC(O)CC1=CC=C1CCCC2(C)C1CCC2C(C)CCCC(C)C','C#CC1(O)CCC2C3CCC4=CC(=O)CCC4C3CCC21C','Nc1ccn(C2OC(CO)C(O)C2O)c(=O)n1','NC(N)=NCCCC(N)C(=O)O','CN1CCN(C(c2ccccc2)c2ccccc2)CC1','CN1C2CCC1CC(OC(c1ccccc1)c1ccccc1)C2','c1ccc2c(c1)Nc1ccccc1S2','CCCCNc1ccc(C(=O)OCCOCCOCCOCCOCCOCCOCCOCCOCCOC)cc1','CCC(CO)NC(=O)C1C=C2c3cccc4[nH]cc(c34)CC2N(C)C1','O=C(O)c1cc(-c2ccccc2)nc2ccccc12','CCOC(=O)C1(c2ccccc2)CCN(CCc2ccc(N)cc2)CC1','CC(=O)CC(c1ccc([N+](=O)[O-])cc1)c1c(O)oc2ccccc2c1=O','CNC(C)C(O)c1ccccc1','Nc1ncn(C2OC(CO)C(O)C2O)c(=O)n1','CC12CCC3C4CCC(=O)C=C4CCC3C1CCC2O','CC(=O)C1(O)CCC2C3CC(C)C4=CC(=O)CCC4(C)C3CCC21C','CNC(C)Cc1ccccc1','C[N+](C)(C)CC(O)CC(=O)[O-]','NC(=O)NS(=O)(=O)c1ccc(N)cc1','S=C=Nc1cccc2ccccc12','OCC1OC(OC2C(CO)OC(O)(CO)C2O)C(O)C(O)C1O','CC(C)(N)CO.Cn1c(=O)c2[nH]c(Br)nc2n(C)c1=O','CC(=O)Nc1cccc(O)c1','CC1C(c2ccccc2)OCCN1C','CCC1OC(=O)C(C)C(OC2CC(C)(OC)C(O)C(C)O2)C(C)C(OC2OC(C)CC(N(C)C)C2O)C(C)(O)CC(C)C(=O)C(C)C(O)C1(C)O','C#CC1(O)CCC2C3CCC4=CC(=O)CCC4C3CCC21CC','CCOC(=O)C1(c2ccccc2)CCN(CCC(C#N)(c2ccccc2)c2ccccc2)CC1','C[N+](C)(C)CCOP(=O)([O-])OP(=O)(O)OCC1OC(n2ccc(N)nc2=O)C(O)C1O','COc1cc2c(c3oc(=O)c4c(c13)CCC4=O)C1C=COC1O2','Cc1c(C)c2c(c(C)c1O)CCC(C)(CCCC(C)CCCC(C)CCCC(C)C)O2','CC(C)Cc1ccc(CC(=O)O)cc1','CNC1C(O)C(NC)C2OC3(O)C(=O)CC(C)OC3OC2C1O','NC(N)=NC(=O)c1nc(Cl)c(N)nc1N','O=c1[nH]c2ccccc2n1C1CCN(CCCC(c2ccc(F)cc2)c2ccc(F)cc2)CC1','CN(C)CCC(c1ccc(Br)cc1)c1ccccn1','OCCN1CCN(CCC=C2c3ccccc3Sc3ccc(C(F)(F)F)cc32)CC1','Cc1cn(C2C=CC(CO)O2)c(=O)[nH]c1=O','Cc1onc(-c2c(Cl)cccc2Cl)c1C(=O)NC1C(=O)N2C1SC(C)(C)C2C(=O)O','COc1cc(O)c(C(=O)c2ccccc2)cc1S(=O)(=O)O','CC1CC2C3CCC4=CC(=O)C=CC4(C)C3(Cl)C(O)CC2(C)C1(O)C(=O)CO','CN(C)CCCC1c2ccccc2Nc2ccc(Cl)cc21','CCc1c(C)[nH]c2c1C(=O)C(CN1CCOCC1)CC2','Nc1ccn(C2CCC(CO)O2)c(=O)n1','COC(=O)Nc1nc2ccccc2[nH]1','C#CCN(C)C(C)Cc1ccccc1','CC(N)C(O)c1ccccc1','CN1CCCC1CCOC(C)(c1ccccc1)c1ccc(Cl)cc1','O=C(O)Cc1csc(-c2ccc(Cl)cc2)n1','CC(=O)Oc1ccc(C2(c3ccc(OC(C)=O)cc3)C(=O)N(C(C)=O)c3ccccc32)cc1','CN(N=O)C(=O)NC1C(O)OC(CO)C(O)C1O','CC1OC(OC2C(O)CC(OC3C(O)CC(OC4CCC5(C)C(CCC6C5CC(O)C5(C)C(C7=CC(=O)OC7)CCC65O)C4)OC3C)OC2C)CC(O)C1O','C=CCOc1ccc(CC(=O)O)cc1Cl','CC12CCC(=O)C=C1CCC1C3CCC(O)(C(=O)CO)C3(C)CC(O)C12F','CC(CCC(=O)O)C1CCC2C3C(O)CC4CC(O)CCC4(C)C3CCC12C','COc1ccc2c(C(=O)c3ccc(Cl)cc3)c(C)n(CC(=O)O)c2c1','CC(Cc1ccc(O)c(O)c1)(NN)C(=O)O','CCOC(=O)Nc1ccc2c(c1)N(C(=O)CCN1CCOCC1)c1ccccc1S2','Cc1cn(C2CC(N=[N+]=[N-])C(CO)O2)c(=O)[nH]c1=O','CC(C(=O)O)c1ccc(N2CC=CC2)c(Cl)c1','CC(=O)OC1C(=O)C2(C)C(O)CC3OCC3(OC(C)=O)C2C(OC(=O)c2ccccc2)C2(O)CC(OC(=O)C(O)C(NC(=O)c3ccccc3)c3ccccc3)C(C)=C1C2(C)C','COc1cc(C2c3cc4c(cc3C(OC3OC5COC(C)OC5C(O)C3O)C3COC(=O)C23)OCO4)cc(OC)c1O','CC(CCc1ccc(O)cc1)NCCc1ccc(O)c(O)c1','CC(C)(C)NCC(O)COc1ccccc1C1CCCC1','NCCC(O)C(=O)NC1CC(N)C(OC2OC(CN)C(O)C(O)C2O)C(O)C1OC1OC(CO)C(O)C(N)C1O','O=C(O)COc1ccc(C(=O)c2cccs2)c(Cl)c1Cl','CC(C)(Oc1ccc(CCNC(=O)c2ccc(Cl)cc2)cc1)C(=O)O','CC(C)(C)NCC(O)COc1cccc2c1CC(O)C(O)C2','COc1ccc(C2Sc3ccccc3N(CCN(C)C)C(=O)C2OC(C)=O)cc1','CC(C(=O)O)c1ccc2oc(-c3ccc(Cl)cc3)nc2c1','CC1(C)C(C=C(Cl)Cl)C1C(=O)OCc1cccc(Oc2ccccc2)c1','O=C(c1cc(O)c(O)c(O)c1)c1ccc(O)c(O)c1O','OCC1OC(n2cnc3c2NC=NCC3O)CC1O','COc1cccc2c1C(=O)c1c(O)c3c(c(O)c1C2=O)CC(O)(C(=O)CO)CC3OC1CC(N)C(O)C(C)O1','CN(C)CCn1nnnc1SCC1=C(C(=O)O)N2C(=O)C(NC(=O)Cc3csc(N)n3)C2SC1','CC(=O)N1CCN(c2ccc(OCC3COC(Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1','O=c1nc[nH]c2c1ncn2C1CCC(CO)O1','CCC(C)C(=O)OC1CC(C)C=C2C=CC(C)C(CCC3CC(O)CC(=O)O3)C21','COc1ccc2c(C(=S)N(C)CC(=O)O)cccc2c1C(F)(F)F','CCC(C)(C)C(=O)OC1CC(C)C=C2C=CC(C)C(CCC3CC(O)CC(=O)O3)C21','CN(C)C(=O)Oc1cc(OC(=O)N(C)C)cc(C(O)CNC(C)(C)C)c1','CCOC(=O)C(CCc1ccccc1)NC(C)C(=O)N1Cc2ccccc2CC1C(=O)O','CCC1OC(=O)C(C)C(OC2CC(C)(OC)C(O)C(C)O2)C(C)C(OC2OC(C)CC(N(C)C)C2O)C(C)(O)CC(C)CN(C)C(C)C(O)C1(C)O','CCC(C)n1ncn(-c2ccc(N3CCN(c4ccc(OCC5COC(Cn6cncn6)(c6ccc(Cl)cc6Cl)O5)cc4)CC3)cc2)c1=O','CC(O)(CS(=O)(=O)c1ccc(F)cc1)C(=O)Nc1ccc(C#N)c(C(F)(F)F)c1','CC(C)(C)NC(=O)C1CCC2C3CCC4NC(=O)C=CC4(C)C3CCC12C','COC(=O)CCc1ccc(OCC(O)CNC(C)C)cc1','CC1CN(c2cc3c(cc2F)c(=O)c(C(=O)O)cn3-c2ccc(F)cc2F)CCN1','COc1cc(CC2c3c(cc(OC)c(OC)c3OC)CC[N+]2(C)CCCOC(=O)CCC(=O)OCCC[N+]2(C)CCc3cc(OC)c(OC)c(OC)c3C2Cc2cc(OC)c(OC)c(OC)c2)cc(OC)c1OC.[Cl-].[Cl-]','Nc1ncnc2c1ncn2CCOCP(=O)(O)O','C=C1CC2C(CCC3(C)C(=O)CCC23)C2(C)C=CC(=O)C=C12','CC(c1cc2ccccc2s1)N(O)C(N)=O','COCC(=O)OC1(CCN(C)CCCc2nc3ccccc3[nH]2)CCc2cc(F)ccc2C1C(C)C','CCC1(O)C(=O)OCc2c1cc1n(c2=O)Cc2cc3c(CN(C)C)c(O)ccc3nc2-1','CC(O)CN1CCN(CC(=O)[O-])CCN(CC(=O)[O-])CCN(CC(=O)[O-])CC1.[Gd+3]','Nc1c(CC(=O)O)cccc1C(=O)c1ccc(Br)cc1','CCCCCCCN(CC)CCCC(O)c1ccc(NS(C)(=O)=O)cc1','Cc1ccc(O)c(C(CCN(C(C)C)C(C)C)c2ccccc2)c1','CC(C)(C)NC(=O)C1CC2CCCCC2CN1CC(O)C(Cc1ccccc1)NC(=O)C(CC(N)=O)NC(=O)c1ccc2ccccc2n1','CC(C)c1c(C(=O)Nc2ccccc2)c(-c2ccccc2)c(-c2ccc(F)cc2)n1CCC(O)CC(O)CC(=O)O','Nc1ccn(C2CSC(CO)O2)c(=O)n1','CNCCC(Oc1cccc2ccccc12)c1cccs1','Nc1nc(=O)n(C2CSC(CO)O2)cc1F','Cc1nc(C)c2c(n1)N(Cc1ccc(-c3ccccc3-c3nn[nH]n3)cc1)C(=O)CC2','CCCCCOC(=O)Nc1nc(=O)n(C2OC(C)C(O)C2O)cc1F','NC1C2CN(c3nc4c(cc3F)c(=O)c(C(=O)O)cn4-c3ccc(F)cc3F)CC12','Nc1nc(NC2CC2)c2ncn(C3C=CC(CO)C3)c2n1','CC(O)C(=O)Nc1c(I)c(C(=O)NC(CO)CO)c(I)c(C(=O)NC(CO)CO)c1I','Cc1cc(Br)c(O)c2ncccc12','CN1c2c(oc(=O)n(-c3ccccn3)c2=O)-c2ccccc2S1(=O)=O','NC(N)=Nc1nc(CSCCN=CNS(=O)(=O)c2ccc(Br)cc2)cs1','CCN(CC)CCOc1cccc(OCCN(CC)CC)c1OCCN(CC)CC','CNC1CCC(c2ccc(Cl)c(Cl)c2)c2ccccc21','CN1c2ccccc2C(NCCCCCCC(=O)O)c2ccc(Cl)cc2S1(=O)=O','Cc1nc([N+](=O)[O-])cn1-c1ccc([N+](=O)[O-])cc1','Cc1c(F)c(N2CCNC(C)C2)cc2c1c(=O)c(C(=O)O)cn2C1CC1','CN(CCOc1ccc(CC2SC(=O)NC2=O)cc1)c1ccccn1','C=C(c1ccc(C(=O)O)cc1)c1cc2c(cc1C)C(C)(C)CCC2(C)C','CCC1OC(=O)C(C)C(OC2CC(C)(OC)C(O)C(C)O2)C(C)C(OC2OC(C)CC(N(C)C)C2O)C(C)(OC)CC(C)C(=O)C(C)C(O)C1(C)O','COc1ccccc1Oc1c(NS(=O)(=O)c2ccc(C(C)(C)C)cc2)nc(-c2ncccn2)nc1OCCO','CCC1(c2ccccc2)C(=O)NC(=O)NC1=O.CCCCOCC(CN1C(=O)N(CC(COCCCC)OC(N)=O)C(=O)C(CC)(c2ccccc2)C1=O)OC(N)=O.CCCCOCC(CN1C(=O)NC(=O)C(CC)(c2ccccc2)C1=O)OC(N)=O','CN(Cc1cnc2nc(N)nc(N)c2n1)c1ccc(C(=O)NC(CCC(=O)O)C(=O)O)cc1','CN(C)CCCC1(c2ccc(F)cc2)OCc2cc(C#N)ccc21','CC(=O)OC12COC1CC(O)C1(C)C(=O)C(O)C3=C(C)C(OC(=O)C(O)C(NC(=O)OC(C)(C)C)c4ccccc4)CC(O)(C(OC(=O)c4ccccc4)C21)C3(C)C','CC1COc2c(N3CCN(C)CC3)c(F)cc3c(=O)c(C(=O)O)cn1c23','CCCCCC(O)C=CC1C(O)CC(=O)C1CCCCCCC(=O)O','Cc1ccc(Nc2c(F)cccc2Cl)c(CC(=O)O)c1','COc1c(N2CC3CCCNC3C2)c(F)cc2c(=O)c(C(=O)O)cn(C3CC3)c12','CCOC1OC(=O)CC1NC(=O)C1CCCN2C(=O)CCC(NC(=O)c3nccc4ccccc34)C(=O)N12','C=C1C(CO)C(O)CC1n1cnc2c(=O)nc(N)[nH]c21','NCC1OC(OC2C(CO)OC(OC3C(O)C(N)CC(N)C3OC3OC(CO)C(O)C(O)C3N)C2O)C(N)C(O)C1O','O=C(O)CCCCC1SCC2NC(=O)NC21','CN1C2CCC1CC(OC(=O)C(CO)c1ccccc1)C2','COC(c1ccccc1)(c1ccccc1)C(Oc1nc(C)cc(C)n1)C(=O)O','CS(=O)(=O)CCNCc1ccc(-c2ccc3ncnc(Nc4ccc(OCc5cccc(F)c5)c(Cl)c4)c3c2)o1','CC(C)CN(CC(O)C(Cc1ccccc1)NC(=O)OC1COC2OCCC12)S(=O)(=O)c1ccc(N)cc1','CCOC(Nc1ccc(C(=O)O)cc1)C(=O)c1ccc(-c2ccccc2)cc1','CCc1oc2ccccc2c1C(=O)c1ccc(O)cc1','NC(C(=O)O)C1CC(Cl)=NO1','CC(C)c1nc(CN(C)C(=O)NC(C(=O)NC(Cc2ccccc2)CC(O)C(Cc2ccccc2)NC(=O)OCc2cncs2)C(C)C)cs1','NCC(O)c1ccc(O)c(O)c1','CCC(C)C1NC(=O)C(Cc2ccc(O)cc2)NC(=O)C(N)CSSCC(C(=O)N2CCCC2C(=O)NC(CC(C)C)C(=O)NCC(N)=O)NC(=O)C(CC(N)=O)NC(=O)C(CCC(N)=O)NC1=O','COC1=CC(=O)CC(C)C12Oc1c(Cl)c(OC)cc(OC)c1C2=O','CC1OC(OC2C(CO)OC(OC3C(CO)OC(O)C(O)C3O)C(O)C2O)C(O)C(O)C1NC1C=C(CO)C(O)C(O)C1O','COC1(NC(=O)Cc2cccs2)C(=O)N2C(C(=O)O)=C(COC(N)=O)CSC21','NC1CC1c1ccccc1','CC(C)=CCN1CCC2(C)c3cc(O)ccc3CC1C2C','C[NH+](C)CCOC(c1ccccc1)c1ccccc1.Cn1c2nc(Cl)nc-2c([O-])n(C)c1=O','CC(N)(Cc1ccc(O)cc1)C(=O)O','COCCNC(=O)CN(CCN(CCN(CC(=O)[O-])CC(=O)NCCOC)CC(=O)[O-])CC(=O)[O-].[Gd+3]','CC(C=CC1=C(C)CCCC1(C)C)=CC=CC(C)=CCO','Cn1nnnc1SCC1=C(C(=O)O)N2C(=O)C(NC(=O)C(O)c3ccccc3)C2SC1','CC(Cn1cnc2c(N)ncnc21)OCP(=O)(O)O','CCCc1cc(=O)[nH]c(=S)[nH]1','CN1CCCN=C1C=Cc1cccs1','CN1CCN(CCC=C2c3ccccc3Sc3ccc(S(=O)(=O)N(C)C)cc32)CC1','COc1cc(CNC(=O)CCCCC=CC(C)C)ccc1O','CC(C)n1c(C=CC(O)CC(O)CC(=O)O)c(-c2ccc(F)cc2)c2ccccc21','CCC(=C(c1ccccc1)c1ccc(OCCN(C)C)cc1)c1ccccc1','CN(C)Cc1ccc(CSCCNC(=C[N+](=O)[O-])NCc2ccc3c(c2)OCO3)o1','CCCCCCCCCCCC(CC1OC(=O)C1CCCCCC)OC(=O)C(CC(C)C)NC=O','COc1ccc(CC(C)NCC(O)c2ccc(O)c(NC=O)c2)cc1','Cc1ccc(C(=O)c2cc(O)c(O)c([N+](=O)[O-])c2)cc1','CCCCCC(O)C=CC1C(O)CC(=O)C1CC=CCCCC(=O)O','CN1C(=C(O)Nc2ccccn2)C(=O)c2ccccc2S1(=O)=O','C=C1CCC(O)CC1=CC=C1CCCC2(C)C1CCC2C(C)C=CC(C)C(C)C','CC1c2cccc(O)c2C(O)=C2C(=O)C3(O)C(=O)C(=C(N)O)C(=O)C(N(C)C)C3C(O)C21','CC(C)(O)c1ccccc1CCC(SCC1(CC(=O)O)CC1)c1cccc(C=Cc2ccc3ccc(Cl)cc3n2)c1','Cc1ccc(C(=CCN2CCCC2)c2ccccn2)cc1','COc1ccc2c3c1OC1C(O)C=CC4C(C2)N(C)CCC341','COc1ccc2c3c1OC1C(=O)CCC4C(C2)N(C)CCC314','CN1CCC23c4c5ccc(O)c4OC2C(=O)CCC3C1C5','C=C1CCC2(O)C3Cc4ccc(O)c5c4C2(CCN3CC2CC2)C1O5','COc1ccc2c3c1OC1C(=O)CCC4(O)C(C2)N(C)CCC314','CN1CCC23c4c5ccc(O)c4OC2C(=O)CCC3(O)C1C5','CN1CCC23c4c5ccc(O)c4OC2C(O)C=CC3C1C5','CCN(CC)CCNC(=O)c1c(C)[nH]c(C=C2C(=O)Nc3ccc(F)cc32)c1C','CN(C)NN=C1N=CN=C1C(N)=O','O=C1CN(N=Cc2ccc([N+](=O)[O-])o2)C(=O)N1','O=C(O)C1=CC(=NNc2ccc(S(=O)(=O)Nc3ccccn3)cc2)C=CC1=O','COc1ccc2c(c1)C13CCCCC1C(C2)N(C)CC3','CON=C(C(=O)NC1C(=O)N2C(C(=O)O)=C(CSc3nc(=O)c(=O)[nH]n3C)CSC12)c1csc(N)n1','CCOC(=O)C(CCc1ccccc1)NC1CCc2ccccc2N(CC(=O)O)C1=O','CC(C)(C)NC(=O)C1CN(Cc2cccnc2)CCN1CC(O)CC(Cc1ccccc1)C(=O)NC1c2ccccc2CC1O','CON=C(N)c1ccc(-c2ccc(-c3ccc(C(N)=NOC)cc3)o2)cc1','CC(C)CC(CN)CC(=O)O','CC1CN(CC(Cc2ccccc2)C(=O)NCC(=O)O)CCC1(C)c1cccc(O)c1','O=C1C=CC=CC1=C1NC(=C2C=CC=CC2=O)N(c2ccc(C(=O)O)cc2)N1','COCCCOc1cc(CC(CC(N)C(O)CC(C(=O)NCC(C)(C)C(N)=O)C(C)C)C(C)C)ccc1OC','CCCCCCCCC=CCCCCCCCC(=O)O.NCCO','CC(=O)Oc1cc2c(s1)CCN(C(C(=O)C1CC1)c1ccccc1F)C2','CN1CCC(Nc2ncc3ncnc(Nc4ccc(F)c(Cl)c4)c3n2)CC1','Cc1ccc(Nc2nccc(N(C)c3ccc4c(C)n(C)nc4c3)n2)cc1S(N)(=O)=O','C[N+]1(C)C2CCC1CC(OC(=O)C(O)c1ccccc1)C2.[Br-]','CC1C=CC=CCCC=CC=CC=CC=CC(OC2OC(C)C(O)C(N)C2O)CC(O)C(C(=O)O)C(O)CC(=O)CC(O)C(O)CCC(O)CC(O)CC(O)CC(=O)OC(C)C(C)C1O','CCCC(CCC)C(=O)O.CCCC(CCC)C(=O)[O-].[Na+]','CCCCC(CC)COC(=O)CC(C(=O)OCC(CC)CCCC)S(=O)(=O)[O-].[Na+]','C=C1c2cccc(O)c2C(O)=C2C(=O)C3(O)C(O)=C(C(N)=O)C(=O)C(N(C)C)C3C(O)C12','O=C1OC(C(O)CO)C(O)=C1O'],
+colors: [
+{
+r: [0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,26,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,170,0,0,0,0,0,0,0,0,0,0,0,0,177,98,0,0,0,0,0,0,6,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,52,6,0,0,0,52,0,0,0,0,0,13,19,0,0,0,0,0,0,0,118,0,0,0,0,0,0,0,0,0,0,26,0,0,0,0,0,0,0,26,111,32,0,0,65,0,45,0,0,0,0,0,0,0,6,0,0,0,19,0,0,0,0,0,177,72,0,0,0,0,0,19,0,0,0,0,0,45,0,0,0,0,0,0,0,0,0,0,0,19,0,0,0,0,0,0,0,13,0,0,0,0,0,0,13,39,0,0,85,0,0,0,0,0,0,0,0,65,52,0,0,0,0,0,0,0,0,0,0,0,32,39,0,177,164,0,190,98,0,0,0,0,183,39,196,0,0,150,0,0,0,0,118,0,0,0,170,72,0,249,210,59,6,0,0,0,0,236,0,0,177,0,177,190,223,0,0,0,0,190,19,0,0,216,0,0,0,6,0,0,13,0,0,0,0,177,0,0,196,0,0,177,0,19,0,0,0,124,242,0,0,190,249,0,0,0,177,0,242,190,0,0,177,0,6,0,0,0,0,0,183,170,223,0,190,59,13,52,59,13,157,65,26,183,6,52,196,39,190,52,118,91,72,39,32,59,170,59,72,52,78,105,177,72,65,0,137,39,196,0,6,0,0,52,59,85,203,85,196,0,0,249,13,0,137,105,150,190,177,0,0,183,124,196,32,0,45,124,0,249,0,177,137,0,0,6,0,118,0,6,59,0,0,0,0,65,0,26,164,0,45,91,210,183,190,150,0,183,177,177,190,177,177,177,137,196,0,190,0,177,19,157,177,78,98,196,170,0,85,111,144,0,203,45,0,249,0],
+g: [255,255,255,249,255,255,255,255,255,255,255,255,255,255,255,255,229,255,255,255,255,255,255,255,255,255,249,255,255,255,255,255,255,85,255,255,255,255,255,255,255,255,255,255,255,255,78,157,255,255,255,255,255,255,249,242,255,255,255,255,255,255,255,255,255,255,255,255,255,255,203,249,255,255,255,203,255,255,255,255,255,242,236,255,255,255,255,255,255,255,137,255,255,255,255,255,255,255,255,255,255,229,255,255,255,255,255,255,255,229,144,223,255,255,190,255,210,255,255,255,255,255,255,255,249,255,255,255,236,255,255,255,255,255,78,183,255,255,255,255,255,236,255,255,255,255,255,210,255,255,255,255,255,255,255,255,255,255,255,236,255,255,255,255,255,255,255,242,255,255,255,255,255,255,242,216,255,255,170,255,255,255,255,255,255,255,255,190,203,255,255,255,255,255,255,255,255,255,255,255,223,216,255,78,91,255,65,157,255,255,255,255,72,216,59,255,255,105,255,255,255,255,137,255,255,255,85,183,255,6,45,196,249,255,255,255,255,19,255,255,78,255,78,65,32,255,255,255,255,65,236,255,255,39,255,255,255,249,255,255,242,255,255,255,255,78,255,255,59,255,255,78,255,236,255,255,255,131,13,255,255,65,6,255,255,255,78,255,13,65,255,255,78,255,249,255,255,255,255,255,72,85,32,255,65,196,242,203,196,242,98,190,229,72,249,203,59,216,65,203,137,164,183,216,223,196,85,196,183,203,177,150,78,183,190,255,118,216,59,255,249,255,255,203,196,170,52,170,59,255,255,6,242,255,118,150,105,65,78,255,255,72,131,59,223,255,210,131,255,6,255,78,118,255,255,249,255,137,255,249,196,255,255,255,255,190,255,229,91,255,210,164,45,72,65,105,255,72,78,78,65,78,78,78,118,59,255,65,255,78,236,98,78,177,157,59,85,255,170,144,111,255,52,210,255,6,255],
+b: [255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255],
+},
+{
+r: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+g: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+b: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+},
+{
+r: [255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255],
+g: [255,255,255,255,255,255,255,255,255,0,255,255,255,255,0,0,255,0,0,0,255,255,255,255,255,0,0,255,255,255,0,0,0,255,255,255,0,0,255,255,0,0,0,255,255,255,0,0,255,0,255,0,0,255,255,0,0,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,255,255,0,0,0,0,255,255,0,255,0,255,0,0,255,0,0,255,255,0,255,255,255,0,255,255,255,0,0,255,0,0,255,255,255,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,0,255,0,0,255,255,255,255,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,0,0,0,255,255,0,255,0,0,0,0,255,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,0,255,255,255,255,255,255,0,255,255,255,0,0,0,255,0,255,255,255,0,255,255,255,0,255,255,0,255,255,0,255,255,255,0,255,255,0,255,0,255,0,0,255,255,255,0,0,255,255,255,255,0,255,255,255,0,255,0,255,0,255,255,255,0,0,255,255,0,255,0,0,255,255,255,0,0,0,255,0,255,255,0,255,0,0,0,0,0,255,255,255,0,255,255,0,0,255,0,0,0,0,0,0,255,0,255,255,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,0,0,255,255,255,0,0,0,0,0,255,0,255,255,0,0,0,255,255,255,255,255,255,0,0,0,255,0,255,255,0,0,0,255,0,255,0,255,0,255,255,255,255,255,255,255,255,255,0,0,0,0,255,0,0,0,0,255,255,0,255,255,255,0,0,255,255,0,255,0,255],
+b: [255,255,255,255,255,255,255,255,255,0,255,255,255,255,0,0,255,0,0,0,255,255,255,255,255,0,0,255,255,255,0,0,0,255,255,255,0,0,255,255,0,0,0,255,255,255,0,0,255,0,255,0,0,255,255,0,0,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,255,255,0,0,0,0,255,255,0,255,0,255,0,0,255,0,0,255,255,0,255,255,255,0,255,255,255,0,0,255,0,0,255,255,255,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,0,255,0,0,255,255,255,255,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,0,0,0,255,255,0,255,0,0,0,0,255,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,0,255,255,255,255,255,255,0,255,255,255,0,0,0,255,0,255,255,255,0,255,255,255,0,255,255,0,255,255,0,255,255,255,0,255,255,0,255,0,255,0,0,255,255,255,0,0,255,255,255,255,0,255,255,255,0,255,0,255,0,255,255,255,0,0,255,255,0,255,0,0,255,255,255,0,0,0,255,0,255,255,0,255,0,0,0,0,0,255,255,255,0,255,255,0,0,255,0,0,0,0,0,0,255,0,255,255,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,0,0,255,255,255,0,0,0,0,0,255,0,255,255,0,0,0,255,255,255,255,255,255,0,0,0,255,0,255,255,0,0,0,255,0,255,0,255,0,255,255,255,255,255,255,255,255,255,0,0,0,0,255,0,0,0,0,255,255,0,255,255,255,0,0,255,255,0,255,0,255],
+},
+{
+r: [255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255],
+g: [255,255,255,255,255,255,255,255,255,0,255,255,255,255,0,0,255,0,0,0,255,255,255,255,255,0,0,255,255,255,0,0,0,255,255,255,0,0,255,255,0,0,0,255,255,255,0,0,255,0,255,0,0,255,255,0,0,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,255,255,0,0,0,0,255,255,0,255,0,255,0,0,255,0,0,255,255,0,255,255,255,0,255,255,255,0,0,255,0,0,255,255,255,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,0,255,0,0,255,255,255,255,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,0,0,0,255,255,0,255,0,0,0,0,255,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,0,255,255,255,255,255,255,0,255,255,255,0,0,0,255,0,255,255,255,0,255,255,255,0,255,255,0,255,255,0,255,255,255,0,255,255,0,255,0,255,0,0,255,255,255,0,0,255,255,255,255,0,255,255,255,0,255,0,255,0,255,255,255,0,0,255,255,0,255,0,0,255,255,255,0,0,0,255,0,255,255,0,255,0,0,0,0,0,255,255,255,0,255,255,0,0,255,0,0,0,0,0,0,255,0,255,255,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,0,0,255,255,255,0,0,0,0,0,255,0,255,255,0,0,0,255,255,255,255,255,255,0,0,0,255,0,255,255,0,0,0,255,0,255,0,255,0,255,255,255,255,255,255,255,255,255,0,0,0,0,255,0,0,0,0,255,255,0,255,255,255,0,0,255,255,0,255,0,255],
+b: [255,255,255,255,255,255,255,255,255,0,255,255,255,255,0,0,255,0,0,0,255,255,255,255,255,0,0,255,255,255,0,0,0,255,255,255,0,0,255,255,0,0,0,255,255,255,0,0,255,0,255,0,0,255,255,0,0,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,255,255,0,0,0,0,255,255,0,255,0,255,0,0,255,0,0,255,255,0,255,255,255,0,255,255,255,0,0,255,0,0,255,255,255,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,0,255,0,0,255,255,255,255,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,0,0,0,255,255,0,255,0,0,0,0,255,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,0,255,255,255,255,255,255,0,255,255,255,0,0,0,255,0,255,255,255,0,255,255,255,0,255,255,0,255,255,0,255,255,255,0,255,255,0,255,0,255,0,0,255,255,255,0,0,255,255,255,255,0,255,255,255,0,255,0,255,0,255,255,255,0,0,255,255,0,255,0,0,255,255,255,0,0,0,255,0,255,255,0,255,0,0,0,0,0,255,255,255,0,255,255,0,0,255,0,0,0,0,0,0,255,0,255,255,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,0,0,255,255,255,0,0,0,0,0,255,0,255,255,0,0,0,255,255,255,255,255,255,0,0,0,255,0,255,255,0,0,0,255,0,255,0,255,0,255,255,255,255,255,255,255,255,255,0,0,0,0,255,0,0,0,0,255,255,0,255,255,255,0,0,255,255,0,255,0,255],
+},
+{
+r: [255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255],
+g: [255,255,255,255,255,255,255,255,255,0,255,255,255,255,0,0,255,0,0,0,255,255,255,255,255,0,0,255,255,255,0,0,0,255,255,255,0,0,255,255,0,0,0,255,255,255,0,0,255,0,255,0,0,255,255,0,0,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,255,255,0,0,0,0,255,255,0,255,0,255,0,0,255,0,0,255,255,0,255,255,255,0,255,255,255,0,0,255,0,0,255,255,255,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,0,255,0,0,255,255,255,255,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,0,0,0,255,255,0,255,0,0,0,0,255,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,0,255,255,255,255,255,255,0,255,255,255,0,0,0,255,0,255,255,255,0,255,255,255,0,255,255,0,255,255,0,255,255,255,0,255,255,0,255,0,255,0,0,255,255,255,0,0,255,255,255,255,0,255,255,255,0,255,0,255,0,255,255,255,0,0,255,255,0,255,0,0,255,255,255,0,0,0,255,0,255,255,0,255,0,0,0,0,0,255,255,255,0,255,255,0,0,255,0,0,0,0,0,0,255,0,255,255,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,0,0,255,255,255,0,0,0,0,0,255,0,255,255,0,0,0,255,255,255,255,255,255,0,0,0,255,0,255,255,0,0,0,255,0,255,0,255,0,255,255,255,255,255,255,255,255,255,0,0,0,0,255,0,0,0,0,255,255,0,255,255,255,0,0,255,255,0,255,0,255],
+b: [255,255,255,255,255,255,255,255,255,0,255,255,255,255,0,0,255,0,0,0,255,255,255,255,255,0,0,255,255,255,0,0,0,255,255,255,0,0,255,255,0,0,0,255,255,255,0,0,255,0,255,0,0,255,255,0,0,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,255,255,0,0,0,0,255,255,0,255,0,255,0,0,255,0,0,255,255,0,255,255,255,0,255,255,255,0,0,255,0,0,255,255,255,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,0,255,0,0,255,255,255,255,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,0,0,0,255,255,0,255,0,0,0,0,255,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,0,255,255,255,255,255,255,0,255,255,255,0,0,0,255,0,255,255,255,0,255,255,255,0,255,255,0,255,255,0,255,255,255,0,255,255,0,255,0,255,0,0,255,255,255,0,0,255,255,255,255,0,255,255,255,0,255,0,255,0,255,255,255,0,0,255,255,0,255,0,0,255,255,255,0,0,0,255,0,255,255,0,255,0,0,0,0,0,255,255,255,0,255,255,0,0,255,0,0,0,0,0,0,255,0,255,255,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,0,0,255,255,255,0,0,0,0,0,255,0,255,255,0,0,0,255,255,255,255,255,255,0,0,0,255,0,255,255,0,0,0,255,0,255,0,255,0,255,255,255,255,255,255,255,255,255,0,0,0,0,255,0,0,0,0,255,255,0,255,255,255,0,0,255,255,0,255,0,255],
+},
+{
+r: [0,255,255,255,255,0,255,0,255,255,255,255,255,255,255,0,0,0,255,255,255,255,0,255,0,0,255,255,255,0,255,255,255,0,255,255,255,255,255,0,255,255,255,255,255,0,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,0,255,0,0,255,255,0,255,0,0,255,255,255,255,255,255,255,255,255,255,0,255,255,0,0,255,255,255,255,255,255,0,255,255,0,255,255,255,0,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,0,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,0,255,255,255,0,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,0,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,0,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,255,0,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,0,255,255,255,255,255,255,0,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,0,255,255,255,255,0,0,255,0,0,0,255,255,255,255,255,255,255,0,255,255,0,255,255,255,255,255,255,0,255,255,255,255,255,0,0,255,255,255,255,255,255,255,255,255,0,255,255,0,255,255,255,255,255,0,0,255,255,255],
+g: [191,255,255,182,255,191,255,191,255,182,255,255,255,255,0,191,191,191,182,182,255,255,191,255,191,191,182,255,255,191,182,182,0,191,255,255,0,0,255,191,0,0,182,255,255,191,191,0,255,0,255,0,0,255,255,182,182,182,0,0,182,0,255,182,0,255,191,255,0,0,191,255,191,191,0,182,191,182,191,191,0,255,182,255,182,0,255,0,0,255,191,0,255,191,191,0,255,255,255,0,0,191,0,0,191,255,255,0,191,0,191,0,255,182,0,255,182,255,0,0,255,255,0,255,182,0,182,255,255,255,255,182,182,0,255,0,0,0,0,0,182,182,0,0,255,182,0,255,191,0,255,0,191,0,255,191,255,0,255,255,255,255,255,255,255,182,255,255,191,255,255,255,191,0,0,182,191,191,0,255,0,182,0,0,182,0,0,255,0,255,255,0,182,0,182,255,182,255,182,191,0,0,0,191,255,255,255,255,191,182,255,255,255,0,0,0,255,0,182,255,191,0,255,191,255,182,255,255,0,255,255,0,255,255,255,0,255,255,182,255,0,255,0,0,255,255,255,0,0,191,182,255,255,0,255,191,255,0,255,0,255,0,255,255,255,0,182,255,191,0,255,182,0,255,255,191,0,182,0,255,182,191,255,182,255,0,0,0,0,0,255,255,255,0,255,255,0,182,182,191,0,0,0,0,0,191,0,255,255,0,255,0,0,255,255,0,255,0,191,0,182,255,191,0,255,255,0,0,0,191,0,182,0,182,0,255,191,0,0,255,255,0,182,0,0,0,0,0,0,0,182,182,0,255,0,0,182,0,191,255,255,0,182,0,182,0,255,182,191,255,0,0,0,191,191,255,191,191,191,0,0,0,255,0,255,255,191,0,0,191,0,255,0,255,0,182,191,255,255,255,255,255,191,191,0,0,0,0,255,182,0,0,0,191,255,182,191,255,182,182,0,255,191,191,255,182,255],
+b: [255,255,255,193,255,255,255,255,255,193,255,255,255,255,0,255,255,255,193,193,255,255,255,255,255,255,193,255,255,255,193,193,0,255,255,255,0,0,255,255,0,0,193,255,255,255,255,0,255,0,255,0,0,255,255,193,193,193,0,0,193,0,255,193,0,255,255,255,0,0,255,255,255,255,0,193,255,193,255,255,0,255,193,255,193,0,255,0,0,255,255,0,255,255,255,0,255,255,255,0,0,255,0,0,255,255,255,0,255,0,255,0,255,193,0,255,193,255,0,0,255,255,0,255,193,0,193,255,255,255,255,193,193,0,255,0,0,0,0,0,193,193,0,0,255,193,0,255,255,0,255,0,255,0,255,255,255,0,255,255,255,255,255,255,255,193,255,255,255,255,255,255,255,0,0,193,255,255,0,255,0,193,0,0,193,0,0,255,0,255,255,0,193,0,193,255,193,255,193,255,0,0,0,255,255,255,255,255,255,193,255,255,255,0,0,0,255,0,193,255,255,0,255,255,255,193,255,255,0,255,255,0,255,255,255,0,255,255,193,255,0,255,0,0,255,255,255,0,0,255,193,255,255,0,255,255,255,0,255,0,255,0,255,255,255,0,193,255,255,0,255,193,0,255,255,255,0,193,0,255,193,255,255,193,255,0,0,0,0,0,255,255,255,0,255,255,0,193,193,255,0,0,0,0,0,255,0,255,255,0,255,0,0,255,255,0,255,0,255,0,193,255,255,0,255,255,0,0,0,255,0,193,0,193,0,255,255,0,0,255,255,0,193,0,0,0,0,0,0,0,193,193,0,255,0,0,193,0,255,255,255,0,193,0,193,0,255,193,255,255,0,0,0,255,255,255,255,255,255,0,0,0,255,0,255,255,255,0,0,255,0,255,0,255,0,193,255,255,255,255,255,255,255,255,0,0,0,0,255,193,0,0,0,255,255,193,255,255,193,193,0,255,255,255,255,193,255],
+},
+{
+r: [255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,255,255,255,0,0,255,0,0,0,255,0,255,0,255,0,0,0,0,255,0,255,255,255,255,255,0,0,255,255,0,0,255,255,255,255,255,255,0,0,0,255,255,255,0,255,255,255,255,0,255,0,255,255,0,0,255,255,255,0,0,255,0,255,0,0,0,0,0,0,0,0,255,255,255,0,255,0,255,0,0,255,0,255,0,0,0,0,0,0,0,0,255,255,0,255,0,255,255,0,255,0,0,0,0,0,255,0,0,255,255,255,0,0,0,0,0,0],
+g: [255,255,255,255,255,255,255,255,255,0,255,255,255,255,0,0,255,0,0,0,255,255,255,255,255,0,0,255,255,255,0,0,0,255,255,255,0,0,255,255,0,0,0,255,255,255,0,0,255,0,255,0,0,255,255,0,0,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,255,255,0,0,0,0,255,255,0,255,0,255,0,0,255,0,0,255,255,0,255,255,255,0,255,255,255,0,0,255,0,0,255,255,255,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,0,255,0,0,255,255,255,255,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,0,0,0,255,255,0,255,0,0,0,0,255,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,0,255,255,255,255,255,255,0,255,255,255,0,0,0,255,0,255,255,255,0,255,255,255,0,255,255,0,255,255,0,255,255,255,0,255,255,0,255,0,255,0,0,255,255,255,0,0,255,255,255,255,0,255,255,255,0,255,0,255,0,255,255,255,0,0,255,255,0,255,0,0,255,255,255,0,0,0,255,0,255,255,0,255,0,0,0,0,0,255,255,255,0,255,255,0,0,182,182,182,182,182,182,182,182,182,182,191,191,182,182,182,191,191,182,191,191,191,182,191,182,191,182,191,191,191,191,182,191,182,182,182,182,182,191,191,182,182,191,191,182,182,182,182,182,182,191,191,191,182,182,182,191,182,182,182,182,191,182,191,182,182,191,191,182,182,182,191,191,182,191,182,191,191,191,191,191,191,191,191,182,182,182,191,182,191,182,191,191,182,191,182,191,191,191,191,191,191,191,191,182,182,191,182,191,182,182,191,182,191,191,191,191,191,182,191,191,182,182,182,191,191,191,191,191,191],
+b: [255,255,255,255,255,255,255,255,255,0,255,255,255,255,0,0,255,0,0,0,255,255,255,255,255,0,0,255,255,255,0,0,0,255,255,255,0,0,255,255,0,0,0,255,255,255,0,0,255,0,255,0,0,255,255,0,0,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,255,255,0,0,0,0,255,255,0,255,0,255,0,0,255,0,0,255,255,0,255,255,255,0,255,255,255,0,0,255,0,0,255,255,255,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,0,255,0,0,255,255,255,255,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,0,0,0,255,255,0,255,0,0,0,0,255,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,0,255,255,255,255,255,255,0,255,255,255,0,0,0,255,0,255,255,255,0,255,255,255,0,255,255,0,255,255,0,255,255,255,0,255,255,0,255,0,255,0,0,255,255,255,0,0,255,255,255,255,0,255,255,255,0,255,0,255,0,255,255,255,0,0,255,255,0,255,0,0,255,255,255,0,0,0,255,0,255,255,0,255,0,0,0,0,0,255,255,255,0,255,255,0,0,193,193,193,193,193,193,193,193,193,193,255,255,193,193,193,255,255,193,255,255,255,193,255,193,255,193,255,255,255,255,193,255,193,193,193,193,193,255,255,193,193,255,255,193,193,193,193,193,193,255,255,255,193,193,193,255,193,193,193,193,255,193,255,193,193,255,255,193,193,193,255,255,193,255,193,255,255,255,255,255,255,255,255,193,193,193,255,193,255,193,255,255,193,255,193,255,255,255,255,255,255,255,255,193,193,255,193,255,193,193,255,193,255,255,255,255,255,193,255,255,193,193,193,255,255,255,255,255,255],
+},
+{
+r: [255,255,255,139,255,255,255,255,255,255,255,255,255,255,255,0,255,0,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,139,255,255,0,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,0,255,255,139,255,255,255,255,255,255,255,255,255,255,255,255,139,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,139,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,139,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,139,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,139,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,139,255,255,255,255,255,255,255,255,0,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,139,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,139,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,139,255,255,255,255,0,255,255,255],
+g: [165,255,255,0,255,165,255,165,255,0,255,255,255,255,255,0,165,0,0,0,255,255,165,255,165,0,0,255,255,165,0,0,255,165,255,255,255,255,255,165,255,255,0,255,255,165,0,255,255,255,255,255,255,255,255,0,0,0,255,255,0,255,255,0,255,255,0,255,255,255,165,255,165,165,255,0,0,0,165,165,255,255,0,255,0,255,255,255,255,255,165,255,255,165,165,255,255,255,255,255,255,165,255,255,165,255,255,255,0,255,0,255,255,0,255,255,0,255,255,255,255,255,255,255,0,255,0,255,255,255,255,0,0,255,255,255,255,255,255,255,0,0,255,255,255,0,255,255,165,255,255,255,0,255,255,165,255,255,255,255,255,255,255,255,255,0,255,255,165,255,255,255,165,255,255,0,165,165,255,255,255,0,255,255,0,255,255,255,255,255,255,255,0,255,0,255,0,255,0,0,255,255,255,165,255,255,255,255,165,0,255,255,255,255,255,255,255,255,0,255,165,255,255,165,255,0,255,255,255,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,165,0,255,255,255,255,165,255,255,255,255,255,255,255,255,255,255,0,255,165,255,255,0,255,255,255,165,255,0,255,255,0,165,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,255,255,255,255,255,165,255,255,255,255,255,255,255,255,255,255,255,255,0,255,0,255,165,255,255,255,255,255,255,0,255,0,255,0,255,255,0,255,255,255,255,255,0,255,255,255,255,255,255,255,0,0,255,255,255,255,0,255,165,255,255,255,0,255,0,255,255,0,165,255,255,255,255,165,165,255,165,165,165,255,255,255,255,255,255,255,0,255,255,165,255,255,255,255,255,0,165,255,255,255,255,255,165,165,255,255,255,255,255,0,255,255,255,165,255,0,165,255,0,0,255,255,165,0,255,0,255],
+b: [0,255,255,0,255,0,255,0,255,0,255,255,255,255,0,0,0,0,0,0,255,255,0,255,0,0,0,255,255,0,0,0,0,0,255,255,0,0,255,0,0,0,0,255,255,0,0,0,255,0,255,0,0,255,255,0,0,0,0,0,0,0,255,0,0,255,0,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,255,0,0,255,0,0,255,0,0,255,0,0,0,255,255,255,0,0,0,0,0,0,255,255,0,0,0,0,0,255,0,0,255,0,255,0,0,255,255,0,255,0,0,0,255,255,255,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,255,0,0,0,255,0,255,0,255,255,255,255,255,255,255,0,255,255,0,255,255,255,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,0,0,255,255,255,255,0,0,255,255,255,0,0,0,255,0,0,255,0,0,255,0,255,0,255,255,0,255,255,0,255,255,255,0,255,255,0,255,0,255,0,0,255,255,255,0,0,0,0,255,255,0,255,0,255,0,255,0,255,0,255,255,255,0,0,255,0,0,255,0,0,255,255,0,0,0,0,255,0,0,255,0,255,0,0,0,0,0,255,255,255,0,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,255,0,0,255,255,0,255,0,0,0,0,255,0,0,255,255,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,255,255,0,0,0,0,0,255,0,0,255,0,0,0,0,0,255,0,0,0,0,0,0,255,0,255,255,0,0,0,0,0,255,0,255,0,0,0,255,255,255,255,255,0,0,0,0,0,0,255,0,0,0,0,0,255,0,0,255,0,0,0,255,0,0,255,0,255],
+},
+{
+r: [255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,139,255,255,255,255,255,255,139,255,139,255,0,139,255,255,255,255,255,255,0,0,255,255,139,255,255,255,255,0,0,255,0,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,0,0,0,139,255,255,255,255,255,255,255,255,139,255,255,255,0,0,255,139,255,255,255,255,0,255,255,255,255,255,255,255,0,0,255,139,255,255,139,0,255,0,255,255,255,255,255,0,255,255,255,255,255,255,139,139,255,255,0,255,255,255,255,0,0,0,255,255,255,255,255,139,255,255,255,255,0,255,0,255],
+g: [255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,165,0,0,0,0,165,165,0,165,0,0,0,165,0,165,0,165,165,0,0,0,0,0,0,0,0,0,165,0,0,0,165,165,0,0,0,0,0,0,0,0,0,0,0,0,165,0,0,0,0,165,0,165,0,0,0,0,0,0,0,165,165,0,0,0,165,165,165,165,165,165,0,0,0,0,0,165,0,0,0,0,165,0,165,0,165,0,165,165,165,165,165,165,0,0,165,0,0,0,0,165,0,0,0,0,165,165,0,165,165,0,0,0,165,165,0,165,0,165],
+b: [255,255,255,255,255,255,255,255,255,0,255,255,255,255,0,0,255,0,0,0,255,255,255,255,255,0,0,255,255,255,0,0,0,255,255,255,0,0,255,255,0,0,0,255,255,255,0,0,255,0,255,0,0,255,255,0,0,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,255,255,0,0,0,0,255,255,0,255,0,255,0,0,255,0,0,255,255,0,255,255,255,0,255,255,255,0,0,255,0,0,255,255,255,0,0,0,0,0,255,255,0,255,0,255,0,0,255,255,0,255,0,0,255,255,255,255,255,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,0,255,255,0,255,0,0,0,255,255,255,0,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,0,0,0,255,255,0,255,0,0,0,0,255,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,0,255,255,255,255,255,255,0,255,255,255,0,0,0,255,0,255,255,255,0,255,255,255,0,255,255,0,255,255,0,255,255,255,0,255,255,0,255,0,255,0,0,255,255,255,0,0,255,255,255,255,0,255,255,255,0,255,0,255,0,255,255,255,0,0,255,255,0,255,0,0,255,255,255,0,0,0,255,0,255,255,0,255,0,0,0,0,0,255,255,255,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+},
+]},
+DILI_tree: {
+x: [57.74,70.221,57.74,47.454,57.74,55.715,90.194,93.132,217.519,204.897,217.519,214.869,217.519,224.057,217.519,209.225,217.519,232.213,189.567,187.476,259.355,263.324,558.795,555.106,558.795,556.85,558.795,563.966,558.795,554.444,558.795,560.982,576.17,596.737,576.17,579.05,576.17,557.149,576.17,572.981,705.743,705.961,705.961,706.095,123.848,122.108,122.108,93.89,122.108,150.081,122.108,120.87,122.108,125.911,122.108,118.429,549.736,545.605,549.736,555.106,81.604,78.177,81.604,86.666,457.979,456.11,47.518,54.6,47.518,42.941,244.508,255.101,244.508,232.213,81.418,85.573,346.719,342.279,327.52,330.795,635.955,618.026,635.955,644.748,635.955,650.368,565.304,563.966,742.38,735.892,742.38,746.985,406.478,409.517,362.627,362.797,285.849,290.481,101.868,104.232,214.869,211.861,320.567,320.785,705.069,703.107,705.069,689.624,705.069,720.975,153.283,157.227,600.597,588.642,600.597,610.714,66.005,79.115,66.005,54.6,467.402,471.812,467.402,457.818,467.402,465.499,467.402,473.953,47.454,42.234,47.454,44.496,372.583,372.321,204.281,209.458,111.638,118.959,111.638,104.232,750.0,745.186,371.26,366.316,72.592,77.812,195.796,204.897,195.796,190.733,424.557,425.392,424.557,409.517,424.557,428.87,424.557,437.102,205.718,200.013,205.718,236.147,205.718,177.208,372.383,368.372,38.824,54.2,38.824,25.575,325.162,297.164,325.162,337.214,325.162,308.774,325.162,328.023,325.162,319.073,325.162,358.04,204.29,209.458,200.013,198.003,200.013,196.104,86.817,90.237,209.458,221.196,85.544,85.573,331.786,330.795,251.784,239.322,251.784,262.688,160.602,166.596,160.602,156.409,319.073,315.351,126.114,115.745,126.114,140.167,126.114,122.262,72.338,54.2,72.338,93.89,380.199,399.069,166.596,168.81,166.596,185.785,166.596,150.081,224.057,200.253,224.057,250.927,236.147,230.75,236.147,235.76,236.147,269.909,236.147,239.15,389.687,387.506,748.826,745.186,610.714,618.387,177.208,148.466,177.208,174.503,324.935,324.596,449.867,447.405,78.989,79.115,720.364,719.469,720.364,720.975,187.476,183.033,288.966,326.185,288.966,250.927,288.966,303.596,288.966,281.252,288.966,286.476,336.871,348.973,336.871,324.596,336.871,333.025,295.689,308.774,539.334,544.048,324.337,324.915,692.117,690.609,250.927,235.739,250.927,249.377,13.788,25.575,13.788,9.905,13.788,4.652,0.0,4.652,110.442,115.745,186.695,185.785,671.257,670.853,178.906,185.785,178.906,171.93,649.398,650.368,384.837,372.321,384.837,396.108,384.837,387.506,231.346,233.532,337.214,348.973,428.743,425.416,745.186,735.892,275.613,271.556,179.368,175.636,746.985,749.508,336.906,331.53,336.906,337.457,336.906,341.427,325.647,331.53,325.647,319.61,625.732,618.026,625.732,623.625,625.732,634.329,396.248,393.379,413.227,409.899,326.185,361.022,326.185,329.791,153.158,150.081,324.915,325.162,279.849,272.027,279.849,284.146,279.849,280.79,395.828,398.827,394.379,398.927,42.179,44.807,409.899,399.069,329.791,335.614,329.791,330.795,185.785,209.225,209.225,224.968,12.521,13.788,528.165,531.754,356.185,358.04,233.532,235.739,157.227,140.167,157.227,177.584,652.532,658.108,652.532,644.748,528.635,531.952,224.968,239.322,642.746,655.978,642.746,631.285,49.196,54.6,49.196,44.807,136.068,139.574,136.068,132.715,136.068,141.949,136.068,126.933,104.232,93.132,255.101,264.172,230.75,226.899,544.048,552.519,330.795,335.078,437.102,447.405,77.812,86.666,475.816,471.812,475.816,479.106,271.556,264.172,568.517,563.966,483.238,481.637,482.496,457.818,406.904,411.692,406.904,399.069,116.197,118.536,675.64,689.624,456.11,461.134,456.11,447.405,173.855,177.584,358.04,366.316,358.04,362.797,358.04,380.199,358.04,357.186,385.456,372.321,701.722,703.107,661.656,658.108,689.624,690.609,643.706,644.748,148.466,125.103,148.466,141.949,550.393,552.519,316.539,320.567,268.828,274.708,298.22,308.966,298.22,290.481,70.221,84.584,93.311,90.364,93.311,95.139,90.364,93.89,90.364,84.757,166.534,168.669,166.534,163.387,396.571,393.379,396.571,398.749,227.298,224.968,227.298,228.732,479.106,481.637,348.973,372.321,126.933,118.959,126.933,125.316,321.659,325.162,85.573,90.237,90.237,93.89,163.387,150.081,163.387,175.636,557.578,560.982,366.316,368.356,100.267,97.075,100.267,125.103,100.267,103.583,100.267,84.584,86.666,100.267,121.735,118.536,121.735,125.103,193.629,196.278,75.604,79.115,564.806,569.761,564.806,555.993,141.813,139.574,544.226,555.993,544.226,538.042,544.226,531.754,544.226,548.851,556.329,552.678,690.952,699.882,690.952,702.612,690.952,687.594,690.952,670.853,618.026,596.737,457.818,425.416,538.042,533.811,523.15,531.754,523.15,518.847,643.047,650.242,643.047,643.135,643.047,634.329,736.47,735.892,337.167,342.279,337.167,354.187,337.167,319.61,699.882,707.672,699.882,702.879,695.958,699.735,554.984,557.149,339.652,336.615,354.187,358.585,354.187,368.372,670.853,655.978,670.853,667.162,670.853,663.463,557.149,531.952,557.149,562.274,343.567,342.279,663.463,662.642,663.463,656.554,83.272,84.584,208.34,209.458,544.494,540.743,544.494,548.909,548.851,549.595,548.851,552.678,706.095,703.643,706.095,709.717,706.095,704.5,396.108,401.025,396.108,400.872,297.164,269.909,297.164,293.093,269.909,274.708,278.313,274.708,409.517,398.827,409.517,398.927,93.132,79.115,393.379,361.022,393.379,425.416,552.678,551.978,735.892,720.975,267.834,264.172,613.918,609.753,613.918,621.16,398.827,385.456,622.915,618.387,562.274,575.739,562.274,560.982,562.274,552.519,656.857,656.554,324.596,320.567,324.596,316.059,366.802,362.797,711.841,707.672,417.102,413.96,704.5,703.562,704.5,699.735,335.614,339.805,209.277,211.861,650.242,656.554,575.739,588.642,548.909,553.071,548.909,544.226,175.636,183.033,531.952,506.889,413.96,409.517,235.739,221.196,171.93,167.719,627.737,631.285,650.368,662.792,588.642,589.755,662.792,675.64,221.196,218.209,200.253,177.584,200.253,196.278,631.285,621.16,378.069,368.372,378.069,380.134,286.574,281.992,286.574,295.689,737.753,733.008,733.008,725.045,398.927,391.733,272.027,262.688,272.027,275.346,640.165,643.135,142.86,141.949,562.891,562.274,305.731,308.966,311.224,316.059,703.562,702.612,702.612,714.671,714.671,725.045,684.758,687.594,80.721,82.113,86.634,90.364,415.553,409.899,82.082,84.757,477.961,473.953,235.419,235.76,560.102,553.071,560.102,566.667,356.104,354.187,175.474,178.906,476.99,473.953,398.637,398.927,322.045,319.61,322.045,325.702,506.889,482.496,547.362,544.226,297.055,297.164,103.583,105.259,291.902,295.689,566.667,571.07,553.071,555.106,218.373,218.951,218.373,217.519,338.038,336.871,167.051,163.387,328.574,327.762,328.574,330.58,330.58,325.702,330.58,336.615,325.702,321.269,320.384,321.269,316.801,321.269,383.255,378.069,84.757,82.113,391.733,388.225,319.61,308.966,319.61,303.596,281.252,274.708,263.324,268.828],
+y: [468.653,475.736,468.653,462.659,468.653,465.359,648.736,649.262,203.106,202.778,203.106,197.017,203.106,258.058,203.106,157.391,203.106,194.733,4.365,9.353,436.126,437.259,155.801,126.081,155.801,159.528,155.801,150.348,155.801,154.558,155.801,187.707,273.955,294.793,273.955,275.887,273.955,254.338,273.955,276.388,585.137,579.532,579.532,568.335,65.945,61.829,61.829,53.457,61.829,71.687,61.829,57.254,61.829,59.467,61.829,63.915,123.845,122.737,123.845,126.081,511.02,514.939,511.02,503.995,750.0,744.903,671.609,673.709,671.609,670.37,185.817,176.978,185.817,194.733,77.479,74.306,282.672,282.425,394.26,391.223,306.957,314.446,306.957,311.503,306.957,297.183,145.805,150.348,240.729,252.822,240.729,232.365,704.616,703.472,538.67,544.131,294.318,294.459,638.968,637.08,197.017,191.878,685.576,691.219,266.182,260.795,266.182,272.382,266.182,260.152,271.923,270.934,198.179,204.254,198.179,194.362,666.229,657.945,666.229,673.709,341.849,357.859,341.849,329.051,341.849,344.738,341.849,341.173,462.659,462.362,462.659,458.077,652.005,647.982,338.737,339.26,623.281,608.088,623.281,637.08,253.681,255.163,562.559,561.446,503.411,503.321,201.844,202.778,201.844,201.135,716.416,720.819,716.416,703.472,716.416,715.991,716.416,727.624,505.219,506.89,505.219,496.955,505.219,513.269,250.196,251.961,72.537,66.105,72.537,78.584,562.305,524.678,562.305,598.728,562.305,572.451,562.305,559.568,562.305,556.356,562.305,554.742,343.231,339.26,506.89,510.884,506.89,504.998,64.629,64.335,339.26,329.859,79.652,74.306,396.886,391.223,99.046,115.454,99.046,85.191,101.477,102.192,101.477,101.214,556.356,553.297,275.964,277.51,275.964,273.774,275.964,276.707,59.446,66.105,59.446,53.457,550.742,547.67,102.192,99.067,102.192,132.243,102.192,71.687,258.058,262.561,258.058,308.254,496.955,492.586,496.955,503.625,496.955,487.364,496.955,494.669,633.506,637.562,258.556,255.163,194.362,191.435,513.269,522.489,513.269,515.112,675.181,671.091,739.547,736.852,662.016,657.945,254.998,250.729,254.998,260.152,9.353,18.239,347.803,361.091,347.803,308.254,347.803,322.378,347.803,394.445,347.803,351.522,652.318,632.719,652.318,671.091,652.318,652.99,580.898,572.451,218.039,219.243,575.275,570.434,280.881,277.048,308.254,318.823,308.254,305.267,84.288,78.584,84.288,82.367,84.288,89.124,91.671,89.124,278.307,277.51,128.58,132.243,476.953,480.883,139.088,132.243,139.088,144.144,293.807,297.183,643.314,647.982,643.314,642.401,643.314,637.562,325.982,322.878,598.728,632.719,340.808,340.622,255.163,252.822,158.375,161.811,28.021,31.004,232.365,227.737,322.396,314.801,322.396,327.377,322.396,324.444,305.511,314.801,305.511,294.672,340.661,314.446,340.661,343.99,340.661,365.293,350.123,352.024,537.438,541.695,361.091,357.769,361.091,377.897,70.388,71.687,570.434,562.305,62.77,72.907,62.77,59.206,62.77,57.352,684.952,684.137,715.428,715.08,692.782,688.905,541.695,547.67,377.897,381.521,377.897,391.223,132.243,157.391,157.391,134.816,88.516,84.288,30.189,32.414,551.409,554.742,322.878,318.823,270.934,273.774,270.934,267.154,317.785,322.898,317.785,311.503,273.726,272.69,134.816,115.454,497.371,489.679,497.371,504.787,682.473,673.709,682.473,688.905,570.859,577.664,570.859,572.512,570.859,546.459,570.859,590.917,637.08,649.262,176.978,168.526,492.586,490.177,219.243,220.5,391.223,394.081,727.624,736.852,503.321,503.995,370.849,357.859,370.849,381.352,161.811,168.526,149.94,150.348,393.981,389.279,309.327,329.051,551.728,554.077,551.728,547.67,519.555,516.122,280.263,272.382,744.903,746.274,744.903,736.852,268.293,267.154,554.742,561.446,554.742,544.131,554.742,550.742,554.742,558.465,666.527,647.982,256.55,260.795,326.004,322.898,272.382,277.048,314.838,311.503,522.489,508.655,522.489,546.459,217.485,220.5,689.889,685.576,438.97,440.793,294.621,294.739,294.621,294.459,475.736,485.039,25.619,32.564,25.619,21.094,32.564,53.457,32.564,16.367,42.309,38.394,42.309,48.956,358.819,352.024,358.819,363.022,129.03,134.816,129.03,124.88,381.352,389.279,632.719,647.982,590.917,608.088,590.917,594.44,563.522,562.305,74.306,64.335,64.335,53.457,48.956,71.687,48.956,31.004,187.376,187.707,561.446,566.359,497.738,495.615,497.738,508.655,497.738,490.392,497.738,485.039,503.995,497.738,511.803,516.122,511.803,508.655,268.678,265.639,655.898,657.945,37.069,35.54,37.069,39.593,581.927,577.664,42.474,39.593,42.474,44.628,42.474,32.414,42.474,25.144,7.473,11.797,495.147,488.631,495.147,516.3,495.147,498.266,495.147,480.883,314.446,294.793,329.051,340.622,44.628,46.111,25.446,32.414,25.446,21.927,388.425,411.434,388.425,393.24,388.425,365.293,249.191,252.822,279.636,282.425,279.636,265.174,279.636,294.672,488.631,482.838,488.631,486.848,558.646,556.319,256.773,254.338,215.782,220.642,265.174,266.249,265.174,251.961,480.883,489.679,480.883,481.725,480.883,457.24,254.338,272.69,254.338,220.036,286.736,282.425,457.24,453.642,457.24,434.325,480.873,485.039,344.699,339.26,72.858,74.49,72.858,70.459,25.144,20.961,25.144,11.797,568.335,572.098,568.335,571.205,568.335,552.835,642.401,639.893,642.401,644.252,524.678,487.364,524.678,524.838,487.364,440.793,441.739,440.793,703.472,684.137,703.472,715.08,649.262,657.945,352.024,357.769,352.024,340.622,11.797,6.056,252.822,260.152,167.712,168.526,515.745,518.418,515.745,511.177,684.137,666.527,189.667,191.435,220.036,211.478,220.036,187.707,220.036,220.5,430.772,434.325,671.091,685.576,671.091,675.176,540.632,544.131,479.78,482.838,695.461,698.631,552.835,535.172,552.835,556.319,381.521,383.905,188.505,191.878,411.434,434.325,211.478,204.254,70.459,98.165,70.459,42.474,31.004,18.239,272.69,290.967,698.631,703.472,318.823,329.859,144.144,146.667,505.457,504.787,297.183,288.505,204.254,200.481,288.505,280.263,329.859,332.41,262.561,267.154,262.561,265.639,504.787,511.177,241.474,251.961,241.474,235.897,587.047,590.213,587.047,580.898,521.384,520.753,520.753,519.695,715.08,723.987,72.907,85.191,72.907,70.971,395.384,393.24,549.83,546.459,216.581,220.036,295.069,294.739,677.633,675.176,535.172,516.3,516.3,518.255,518.255,519.695,500.954,498.266,0.0,5.474,31.426,32.564,541.443,541.695,12.772,16.367,343.408,341.173,508.097,503.625,97.106,98.165,97.106,95.847,261.245,265.174,138.113,139.088,337.926,341.173,719.645,715.08,270.56,294.672,270.56,247.922,290.967,309.327,43.212,42.474,520.534,524.678,490.392,485.708,582.574,580.898,95.847,95.012,98.165,126.081,208.268,212.292,208.268,203.106,656.374,652.318,49.251,48.956,219.101,213.514,219.101,228.84,228.84,247.922,228.84,220.642,247.922,242.83,238.282,242.83,241.893,242.83,239.136,241.474,16.367,5.474,723.987,728.481,294.672,294.739,294.672,322.378,394.445,440.793,437.259,438.97],
+z: [375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0],
+},
+};
+
+    </script>
+    
+    <script>
+
+      //status on whether to show or not the background canvas
+      let FullMolinBkg = false;
+
+      class Faerun {
+        constructor() {
+          this.body = document.getElementsByTagName('body')[0];
+
+          this.selectedItems = [];
+          this.selectedIndicators = [];
+          this.selectedCurrent = [];
+          this.scatterMeta = [{"categorical": [true, true, true, true, true, true, true, true, true], "fog_intensity": 0.0, "has_legend": true, "interactive": true, "is_range": [false, false, false, false, false, false, false, false, false], "label_index": [0, 0, 0, 0, 0, 0, 0, 0, 0], "legend": [[[[0.0, 1.0, 1.0, 1.0], "1980"], [[0.023529411764705882, 0.9764705882352941, 1.0, 1.0], "1981"], [[0.050980392156862744, 0.9490196078431372, 1.0, 1.0], "1982"], [[0.07450980392156863, 0.9254901960784314, 1.0, 1.0], "1983"], [[0.10196078431372549, 0.8980392156862745, 1.0, 1.0], "1984"], [[0.12549019607843137, 0.8745098039215686, 1.0, 1.0], "1985"], [[0.15294117647058825, 0.8470588235294118, 1.0, 1.0], "1986"], [[0.1764705882352941, 0.8235294117647058, 1.0, 1.0], "1987"], [[0.20392156862745098, 0.7960784313725491, 1.0, 1.0], "1988"], [[0.23137254901960785, 0.7686274509803921, 1.0, 1.0], "1989"], [[0.2549019607843137, 0.7450980392156863, 1.0, 1.0], "1990"], [[0.2823529411764706, 0.7176470588235294, 1.0, 1.0], "1991"], [[0.3058823529411765, 0.6941176470588235, 1.0, 1.0], "1992"], [[0.3333333333333333, 0.6666666666666667, 1.0, 1.0], "1993"], [[0.3568627450980392, 0.6431372549019607, 1.0, 1.0], "1994"], [[0.38431372549019605, 0.615686274509804, 1.0, 1.0], "1995"], [[0.4117647058823529, 0.5882352941176471, 1.0, 1.0], "1996"], [[0.43529411764705883, 0.5647058823529412, 1.0, 1.0], "1997"], [[0.4627450980392157, 0.5372549019607843, 1.0, 1.0], "1998"], [[0.48627450980392156, 0.5137254901960784, 1.0, 1.0], "1999"], [[0.5372549019607843, 0.4627450980392157, 1.0, 1.0], "2001"], [[0.5647058823529412, 0.43529411764705883, 1.0, 1.0], "2002"], [[0.5882352941176471, 0.4117647058823529, 1.0, 1.0], "2003"], [[0.615686274509804, 0.38431372549019605, 1.0, 1.0], "2004"], [[0.6431372549019607, 0.3568627450980393, 1.0, 1.0], "2005"], [[0.6666666666666666, 0.33333333333333337, 1.0, 1.0], "2006"], [[0.6941176470588235, 0.3058823529411765, 1.0, 1.0], "2007"], [[0.7176470588235294, 0.2823529411764706, 1.0, 1.0], "2008"], [[0.7450980392156863, 0.2549019607843137, 1.0, 1.0], "2009"], [[0.7686274509803921, 0.2313725490196079, 1.0, 1.0], "2010"], [[0.796078431372549, 0.20392156862745103, 1.0, 1.0], "2011"], [[0.8235294117647058, 0.17647058823529416, 1.0, 1.0], "2012"], [[0.8470588235294118, 0.15294117647058825, 1.0, 1.0], "2013"], [[0.8745098039215686, 0.12549019607843137, 1.0, 1.0], "2014"], [[0.9254901960784314, 0.07450980392156858, 1.0, 1.0], "2016"], [[0.9490196078431372, 0.050980392156862786, 1.0, 1.0], "2017"], [[0.9764705882352941, 0.02352941176470591, 1.0, 1.0], "2018"]], [[[0.0, 1.0, 1.0, 1.0], "1980"], [[0.0, 0.0, 0.0, 0.0], "1981"], [[0.0, 0.0, 0.0, 0.0], "1982"], [[0.0, 0.0, 0.0, 0.0], "1983"], [[0.0, 0.0, 0.0, 0.0], "1984"], [[0.0, 0.0, 0.0, 0.0], "1985"], [[0.0, 0.0, 0.0, 0.0], "1986"], [[0.0, 0.0, 0.0, 0.0], "1987"], [[0.0, 0.0, 0.0, 0.0], "1988"], [[0.0, 0.0, 0.0, 0.0], "1989"], [[0.0, 0.0, 0.0, 0.0], "1990"], [[0.0, 0.0, 0.0, 0.0], "1991"], [[0.0, 0.0, 0.0, 0.0], "1992"], [[0.0, 0.0, 0.0, 0.0], "1993"], [[0.0, 0.0, 0.0, 0.0], "1994"], [[0.0, 0.0, 0.0, 0.0], "1995"], [[0.0, 0.0, 0.0, 0.0], "1996"], [[0.0, 0.0, 0.0, 0.0], "1997"], [[0.0, 0.0, 0.0, 0.0], "1998"], [[0.0, 0.0, 0.0, 0.0], "1999"], [[0.0, 0.0, 0.0, 0.0], "2001"], [[0.0, 0.0, 0.0, 0.0], "2002"], [[0.0, 0.0, 0.0, 0.0], "2003"], [[0.0, 0.0, 0.0, 0.0], "2004"], [[0.0, 0.0, 0.0, 0.0], "2005"], [[0.0, 0.0, 0.0, 0.0], "2006"], [[0.0, 0.0, 0.0, 0.0], "2007"], [[0.0, 0.0, 0.0, 0.0], "2008"], [[0.0, 0.0, 0.0, 0.0], "2009"], [[0.0, 0.0, 0.0, 0.0], "2010"], [[0.0, 0.0, 0.0, 0.0], "2011"], [[0.0, 0.0, 0.0, 0.0], "2012"], [[0.8470588235294118, 0.15294117647058825, 1.0, 1.0], "2013"], [[0.8745098039215686, 0.12549019607843137, 1.0, 1.0], "2014"], [[0.9254901960784314, 0.07450980392156858, 1.0, 1.0], "2016"], [[0.9490196078431372, 0.050980392156862786, 1.0, 1.0], "2017"], [[0.9764705882352941, 0.02352941176470591, 1.0, 1.0], "2018"]], [[[1.0, 1.0, 1.0, 1.0], "Non-toxic"], [[1.0, 0.0, 0.0, 1.0], "Toxic"]], [[[1.0, 1.0, 1.0, 1.0], "Non-toxic"], [[1.0, 0.0, 0.0, 1.0], "Toxic"]], [[[1.0, 1.0, 1.0, 1.0], "Non-toxic"], [[1.0, 0.0, 0.0, 1.0], "Toxic"]], [[[1.0, 1.0, 1.0, 1.0], "Train (Non-toxic)"], [[1.0, 0.0, 0.0, 1.0], "Train (Toxic)"], [[0.0, 0.7490196078431373, 1.0, 1.0], "Pred (Non-toxic)"], [[1.0, 0.7137254901960784, 0.7568627450980392, 1.0], "Pred (Toxic)"]], [[[1.0, 1.0, 1.0, 1.0], "Train (Non-toxic)"], [[1.0, 0.0, 0.0, 1.0], "Train (Toxic)"], [[0.0, 0.7490196078431373, 1.0, 1.0], "Pred (Non-toxic)"], [[1.0, 0.7137254901960784, 0.7568627450980392, 1.0], "Pred (Toxic)"]], [[[1.0, 1.0, 1.0, 1.0], "Train (Non-toxic)"], [[1.0, 1.0, 0.0, 1.0], "Train (Toxic)"], [[1.0, 0.6470588235294118, 0.0, 1.0], "True Negative"], [[1.0, 0.0, 0.0, 1.0], "True Positive"], [[0.5450980392156862, 0.0, 0.0, 1.0], "False Positive"], [[0.0, 0.0, 0.0, 1.0], "False Negative"]], [[[1.0, 1.0, 1.0, 1.0], "Train (Non-toxic)"], [[1.0, 1.0, 0.0, 1.0], "Train (Toxic)"], [[1.0, 0.6470588235294118, 0.0, 1.0], "True Negative"], [[1.0, 0.0, 0.0, 1.0], "True Positive"], [[0.5450980392156862, 0.0, 0.0, 1.0], "False Positive"], [[0.0, 0.0, 0.0, 1.0], "False Negative"]]], "legend_title": ["DILI", "DILI", "DILI", "DILI", "DILI", "DILI", "DILI", "DILI", "DILI"], "mapping": {"c": "c", "cs": "cs", "knn": "knn", "labels": "labels", "s": "s", "x": "x", "y": "y", "z": "z"}, "max_c": [2023.0, 2.0, 1.0, 1.0, 1.0, 3.0, 3.0, 5.0, 5.0], "max_legend_label": ["2023.00", "2.00", "1.00", "1.00", "1.00", "3.00", "3.00", "5.00", "5.00"], "max_point_size": 20, "min_c": [1980.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "min_legend_label": ["1980.00", "0.00", "0.00", "0.00", "0.00", "0.00", "0.00", "0.00", "0.00"], "name": "DILI", "ondblclick": [null, null, null, null, null, null, null, null, null], "point_scale": 2.5, "selected_labels": [null, null, null, null, null, null, null, null, null], "series_title": ["Year (Full)", "Year (Binned)", "Original Y", "True Y (Random Split)", "True Y (Time Split)", "Predicted Y (Random)", "Predicted Y (Time Split)", "Result (Random)", "Result (Time-based)"], "shader": "smoothCircle", "title_index": [0, 0, 0, 0, 0, 0, 0, 0, 0]}];
+          this.treeMeta = [{"color": "#666666", "fog_intensity": 0.0, "mapping": {"c": "c", "from": "from", "to": "to", "x": "x", "y": "y", "z": "z"}, "name": "DILI_tree", "point_helper": "DILI"}];
+          this.seriesState = {};
+          this.el = {};
+
+          this.currentPoint = null;
+
+          this.lore = null;
+          this.clearColorHex = '#111111';
+          this.clearColor = null;
+          this.view = 'front';
+          this.antiAliasing = true;
+          this.alphaBlending = false;
+          this.thumbnailWidth = 250;
+          this.thumbnailFixed = false;
+
+          this.treeHelpers = [];
+          this.pointHelpers = [];
+          this.octreeHelpers = [];
+          this.coordinatesHelper = null;
+
+          this.ohIndexToPhName = [];
+          this.ohIndexToPhIndex = [];
+          this.phIndexMap = {};
+          this.ohIndexMap = {};
+
+          this.min = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
+          this.max = [-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE];
+          this.maxRadius = -Number.MAX_VALUE;
+
+          this.coords = {
+            show: false,
+            grid: false,
+            ticks: true,
+            tickCount: 10,
+            tickLength: 2.0,
+            color: '#888888',
+            box: false,
+            offset: 5.0
+          };
+
+          this.legend = {
+            show: true,
+            title: 'Legend'
+          };
+
+          
+          this.sdMolOpts = {
+            width: this.thumbnailWidth / window.devicePixelRatio,
+            height: this.thumbnailWidth / window.devicePixelRatio,
+            experimental: true
+          }
+
+          this.sdSelected = new SmiDrawer(this.sdMolOpts);
+
+          if (this.thumbnailFixed) {
+            this.sdMolOpts = {
+              scale: 0.75,
+              experimental: true
+            }
+          }
+
+          this.sd = new SmiDrawer(this.sdMolOpts);
+
+          this.el = Faerun.bindElements();
+
+          this.scatterMeta.forEach(s => {
+            this.seriesState[s.name] = 0;
+          });
+
+          this.clearColor = Lore.Core.Color.fromHex(this.clearColorHex);
+          this.alphaBlending = (this.view === 'free' ? false : true) || this.alphaBlending;
+
+          this.initLore();
+          this.initTreeHelpers();
+          this.initPointHelpers();
+          this.initCoords();
+          this.initAxes();
+          this.initView();
+          this.initEvents();
+          this.renderLegend();
+        }
+
+        initLore() {
+          this.lore = Lore.init('lore', {
+            antialiasing: this.antiAliasing,
+            clearColor: this.clearColorHex,
+            alphaBlending: this.alphaBlending,
+            preserveDrawingBuffer: true
+          });
+        }
+
+        initTreeHelpers() {
+          this.treeMeta.forEach(t => {
+            let th = new Lore.Helpers.TreeHelper(this.lore, t.name, 'tree');
+            th.setXYZHexS(data[t.name].x, data[t.name].y, data[t.name].z, t.color);
+            th.setFog([this.clearColor.components[0], this.clearColor.components[1], 
+                       this.clearColor.components[2], this.clearColor.components[3]],
+                      t.fog_intensity);
+            this.treeHelpers.push(th);
+          });
+        }
+
+        initPointHelpers() {
+          this.scatterMeta.forEach(s => {           
+            let ph = new Lore.Helpers.PointHelper(
+              this.lore, s.name, s.shader, { maxPointSize: s.max_point_size }
+            );
+
+            ph.setXYZRGBS(data[s.name].x, data[s.name].y, data[s.name].z, 
+                          data[s.name]['colors'][0].r, data[s.name]['colors'][0].g, 
+                          data[s.name]['colors'][0].b, data[s.name]['s'] ? data[s.name]['s'][0] : 1.0);
+
+            ph.setPointScale(s.point_scale);
+            ph.setFog([this.clearColor.components[0], this.clearColor.components[1],
+                       this.clearColor.components[2], this.clearColor.components[3]],
+                      s.fog_intensity)
+
+            this.phIndexMap[s.name] = this.pointHelpers.length;
+            this.pointHelpers.push(ph);
+
+            this.min[0] = Faerun.getMin(data[s.name].x, this.min[0]);
+            this.min[1] = Faerun.getMin(data[s.name].y, this.min[1]);
+            this.min[2] = Faerun.getMin(data[s.name].z, this.min[2]);
+            this.max[0] = Faerun.getMax(data[s.name].x, this.max[0]);
+            this.max[1] = Faerun.getMax(data[s.name].y, this.max[1]);
+            this.max[2] = Faerun.getMax(data[s.name].z, this.max[2]);
+            this.maxRadius = ph.getMaxRadius();
+    
+            if (s.interactive && data[s.name].labels) {
+              this.octreeHelpers.push(
+                new Lore.Helpers.OctreeHelper(this.lore, 'Octree_' + s.name, 'tree', ph)
+              );
+
+              this.ohIndexMap[s.name] = this.octreeHelpers.length - 1;
+              this.ohIndexToPhName.push(s.name);
+              this.ohIndexToPhIndex.push(this.phIndexMap[s.name]);
+            }
+          });
+        }
+
+        initCoords() {
+          if (!this.coords.show) return;
+
+          let min = [0, 0, 0];
+          let max = [0, 0, 0];
+
+          for (var i = 0; i < 3; i++) {
+            min[i] = this.min[i] - this.coords.offset;
+            max[i] = this.max[i] + this.coords.offset;
+          }
+
+          this.coordinatesHelper = new Lore.Helpers.CoordinatesHelper(this.lore, 'Coordinates', 'coordinates', {
+            position: new Lore.Math.Vector3f(min[0], min[1], min[2]),
+            axis: {
+              x: {
+                length: max[0] - min[0],
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              },
+              y: {
+                length: max[1] - min[1],
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              },
+              z: {
+                length: max[2] - min[2],
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              }
+            },
+            ticks: {
+              enabled: this.coords.ticks,
+              x: {
+                length: this.coords.tickLength,
+                color: Lore.Core.Color.fromHex(this.coords.color),
+                count: this.coords.tickCount
+              },
+              y: {
+                length: this.coords.tickLength,
+                color: Lore.Core.Color.fromHex(this.coords.color),
+                count: this.coords.tickCount
+              },
+              z: {
+                length: this.coords.tickLength,
+                color: Lore.Core.Color.fromHex(this.coords.color),
+                count: this.coords.tickCount
+              }
+            },
+            box: {
+              enabled: this.coords.box,
+              x: {
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              },
+              y: {
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              },
+              z: {
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              }
+            }
+          });
+        }
+
+        initAxes() {
+          // Wait for DOM to get ready
+          setTimeout(() => {
+            this.updateTitle(true);
+            this.updateXAxis(true);
+            this.updateYAxis(true);
+          }, 500);
+        }
+
+        initView() {
+          let center = new Lore.Math.Vector3f(
+              (this.max[0] + this.min[0]) / 2.0, 
+              (this.max[1] + this.min[1]) / 2.0, 
+              (this.max[2] + this.min[2]) / 2.0
+            );
+          this.lore.controls.setLookAt(center);
+          this.lore.controls.setRadius(this.maxRadius + 100);
+          this.lore.controls.setView(0.9, -0.5)
+          this.lore.controls.setViewByName(this.view);
+        }
+
+        initEvents() {
+          this.lore.controls.addEventListener('updated', () => {
+            // Update the position / content of the annotations every time
+            // the view changes
+            this.updateTitle();
+            this.updateYAxis();
+            this.updateXAxis();
+            this.updateSelectedIndicators();
+          });
+
+          Lore.Helpers.OctreeHelper.joinHoveredChanged(this.octreeHelpers, e => {
+            let phName = this.ohIndexToPhName[e.source];
+            if (e.e && data[phName].labels) {
+              let fullLabel = data[phName].labels[e.e.index];
+              let labelIndex = this.scatterMeta[this.ohIndexToPhIndex[e.source]]
+                                  .label_index[this.seriesState[phName]];
+              let titleIndex = this.scatterMeta[this.ohIndexToPhIndex[e.source]]
+                                  .title_index[this.seriesState[phName]];
+
+              let rgbColor = this.pointHelpers[e.source].getColor(e.e.index);
+              let hexColor = Lore.Core.Color.rgbToHex(rgbColor[0], rgbColor[1], rgbColor[2]);
+
+              this.currentPoint = {
+                index: e.e.index,
+                fullLabel: fullLabel.split('__'),
+                source: phName,
+                label: fullLabel.split('__')[labelIndex],
+                color: hexColor,
+                labelIndex: labelIndex,
+                titleIndex: titleIndex
+              }
+              
+              if (FullMolinBkg == true) {
+
+                document.getElementById("overlay-structure-container").style.visibility = "visible";
+
+                var overlayStruc_Width = document.getElementById("overlay-structure-container").offsetWidth
+                var overlayStruc_Height = document.getElementById("overlay-structure-container").offsetHeight
+
+                if (overlayStruc_Width > overlayStruc_Height) {overlayStruc_Width = overlayStruc_Height}
+
+                this.sd = new SmiDrawer({
+                  width: overlayStruc_Width / window.devicePixelRatio,
+                  height: overlayStruc_Width / window.devicePixelRatio,
+                  bondThickness: 1.4,
+                  experimental: true
+                });
+
+                this.setTipContent();
+                this.sd = new SmiDrawer(this.sdMolOpts);
+              } else {
+
+                document.getElementById("overlay-structure-container").style.visibility = "hidden";
+                this.setTipContent__();
+
+                this.el.tip.classList.add('show');
+
+                let pointSize = this.pointHelpers[e.source].getPointSize() / window.devicePixelRatio;
+                let x = e.e.screenPosition[0];
+                let y = e.e.screenPosition[1];
+
+                this.el.hoverIndicator.style.width = pointSize + 'px';
+                this.el.hoverIndicator.style.height = pointSize + 'px';
+                this.el.hoverIndicator.style.left = (x - pointSize / 2.0 - 1) + 'px';
+                this.el.hoverIndicator.style.top = (y - pointSize / 2.0 - 1) + 'px';
+
+                this.el.hoverIndicator.classList.add('show');
+                }
+
+            } else {
+              this.currentPoint = null;
+              this.el.tip.classList.remove('show');
+              this.el.hoverIndicator.classList.remove('show');
+            }
+          });
+
+          Lore.Helpers.OctreeHelper.joinSelectedChanged(this.octreeHelpers, items => {
+            this.selectedItems = items;
+            this.updateSelected();
+          });
+
+          Lore.Helpers.OctreeHelper.joinReselected(this.octreeHelpers, item => {
+            this.updateSelected(
+              this.getSelectedIndex(item[0].source, item[0].item.e.index)
+            );
+          });
+
+          // Event listeners
+          this.el.selectedPrev.addEventListener('click', e => {
+            e.preventDefault();
+            this.updateSelected(this.selectedCurrent - 1);
+            return false;
+          });
+
+          this.el.selectedNext.addEventListener('click', e => {
+            e.preventDefault();
+            this.updateSelected(this.selectedCurrent + 1);
+            return false;
+          });
+
+          this.el.selectedRemove.addEventListener('click', e => {
+            e.preventDefault();
+            let item = this.selectedItems[this.selectedCurrent]
+            this.octreeHelpers[item.source].removeSelected(item.index);
+            return false;
+          });
+
+          document.addEventListener('dblclick', e => {
+            if (this.currentPoint) {
+              var index = this.currentPoint.index;
+              var labels = this.currentPoint.label.split('__');
+              var source = this.currentPoint.source;
+              eval(this.scatterMeta[this.phIndexMap[source]].ondblclick[this.seriesState[source]]);
+            }
+          });
+
+          document.addEventListener('mousemove', e => {
+            if (FullMolinBkg == false) {
+              document.getElementById("tip").style.visibility = "visible";
+
+              if (!this.thumbnailFixed) {
+                let x = e.clientX;
+                let y = e.clientY;
+
+                if (x > window.innerWidth - this.el.tip.offsetWidth - 20) {
+                  x -= this.el.tip.offsetWidth;
+                } else {
+                  x += 10;
+                }
+
+                if (y > window.innerHeight - this.el.tip.offsetHeight - 20) {
+                  y -= this.el.tip.offsetHeight;
+                } else {
+                  y += 10;
+                }
+
+                if (this.el.tip) {
+                  this.el.tip.style.top = y + 'px';
+                  this.el.tip.style.left = x + 'px';
+                }
+              }
+            } else {
+              document.getElementById("tip").style.visibility = "hidden";
+            }
+          });
+
+          this.el.selectedToggle.addEventListener('click', e => {
+            this.el.selectedContainer.classList.toggle('hide');
+            if (this.el.selectedContainer.classList.contains('hide'))
+              this.el.selectedToggle.innerHTML = '<i class="fas fa-toggle-off"></i>';
+            else
+              this.el.selectedToggle.innerHTML = '<i class="fas fa-toggle-on"></i>';
+            
+            e.preventDefault();
+            return false;
+          });
+
+          this.el.showControls.addEventListener('click', e => {
+            this.el.moreControls.classList.toggle('hide');
+            e.preventDefault();
+            return false;
+          });
+
+          this.el.search.addEventListener('click', e => {
+            let searchTerm = prompt('Please enter a search term:', '');
+            const results = this.search(searchTerm);
+
+            for (const [name, indices] of Object.entries(results)) {
+              if (!name in this.ohIndexMap) return;
+              indices.forEach(index => {
+                this.octreeHelpers[this.ohIndexMap[name]].addSelected(index);
+              });
+            }
+            
+            e.preventDefault();
+            return false;
+          });
+
+          window.addEventListener('keydown', e => {
+            if ((e.keyCode == 114) || (e.ctrlKey && e.keyCode == 70)) {
+              this.search();
+              e.preventDefault();
+              return false;
+            }
+          });
+
+          this.el.export.addEventListener('click', e => {
+            e.preventDefault();
+
+            let canvas = document.getElementById('lore');
+            let zoom = this.lore.controls.getZoom();
+
+            canvas.style.width = (canvas.width * 2) + 'px';
+            canvas.style.height = (canvas.height * 2) + 'px';
+            this.lore.controls.setZoom(zoom * 2);
+
+            setTimeout(() => {
+              let blob = this.lore.canvas.toBlob(blob => {
+                let a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.setAttribute('download', 'export.png');
+                a.click();
+                
+                setTimeout(() => {
+                  canvas.style.width = '100%';
+                  canvas.style.height = '100%';
+                  lore.controls.setZoom(zoom);
+                }, 2000);
+              });
+            }, 2000);
+          });
+
+          this.el.download.addEventListener('click', e => {
+            e.preventDefault();
+
+            let text = ''
+            this.selectedItems.forEach(item => {
+              let phIndex = this.ohIndexToPhIndex[item.source];
+              let meta = this.scatterMeta[phIndex];
+              let phName = this.ohIndexToPhName[item.source];
+              let seriesState = this.seriesState[phName];
+
+              let fullLabel = data[phName].labels[item.item.index].split('__');
+
+              let labelIndex = meta.label_index[seriesState];
+              let titleIndex = meta.title_index[seriesState];
+              let selectedLabels = meta.selected_labels[seriesState];
+
+              fullLabel.forEach((l, i) => {
+                text += l + ';'
+              });
+              text = text.slice(0, -1); 
+              text += '\n';
+            });
+
+            var a = document.createElement('a');
+            a.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            a.setAttribute('download', 'faerun_list.csv');
+
+            a.style.display = 'none';
+            document.body.appendChild(a);
+
+            a.click();
+
+            document.body.removeChild(a);
+
+            return false;
+          });
+
+          this.el.largepreview.addEventListener('click', e => {
+            
+            //Switch display mode:
+            if (FullMolinBkg == false) {
+              FullMolinBkg = true;
+            } else {
+              FullMolinBkg = false;
+              //HIDE BIG CANVAS IN BACKGROUND:
+              document.getElementById("overlay-structure-container").style.visibility = "hidden";
+            }
+          });
+        }
+
+        setTipContent__() {
+          this.sd.draw(this.currentPoint.label, this.thumbnailFixed ? 'svg' : 'img', "light", element => {
+            this.el.tipText.innerHTML = '';
+            if (this.currentPoint.titleIndex !== this.currentPoint.labelIndex)
+              this.el.tipText.innerHTML = `${this.currentPoint.fullLabel[this.currentPoint.titleIndex]}<br />`;
+            this.el.tipText.appendChild(element);
+            this.el.tip.style.borderColor = this.currentPoint.color;
+            document.getElementById("tip").style.visibility = "visible";
+          });
+        }
+
+        setTipContent() {
+          this.sd.draw(this.currentPoint.label, "#overlay-structure", "dark");
+          document.getElementById("tip").style.visibility = "hidden";
+        }
+
+        setSelectedContent(fullLabel, labelIndex, selectedLabels, img) {
+          this.el.selectedContainer.innerHTML = '';
+          if (img)
+            this.el.selectedContainer.appendChild(img);
+
+          fullLabel.forEach((l, i) => {
+            if (i === labelIndex) return;
+            if (selectedLabels && selectedLabels[i]) {
+              this.el.selectedContainer.appendChild(
+                Faerun.createElement('div', { classes: 'label', content: selectedLabels[i] })
+              );
+            }
+            this.el.selectedContainer.appendChild(
+              Faerun.createElement('div', { classes: 'content', content: l })
+            );
+          });
+
+          // Update the indicator
+          this.updateSelectedIndicators();
+        }
+
+        renderLegend() {
+          if (!this.legend.show) return;
+
+          
+          let legend = document.getElementById('legend');
+          
+          if (legend) this.body.removeChild(legend);
+
+          legend = Faerun.createElement('div', { id: 'legend' });
+          this.body.appendChild(legend)
+          
+          if (this.legend.title && this.legend.title !== '')
+            legend.appendChild(Faerun.createElement('h2', { content: 'Legend' }));
+          
+          let container = Faerun.createElement('div', { classes: 'container' });
+          legend.appendChild(container);
+
+          this.scatterMeta.forEach(s => {
+            let index = this.seriesState[s.name];
+            if (s.has_legend) {
+              let legendSection = []
+              if (!s.is_range[index]) {
+                s.legend[index].forEach(v => {
+                  legendSection.push(Faerun.createElement('div', { classes: 'legend-element' }, [
+                    Faerun.createColorBox(v[0]),
+                    Faerun.createElement('div', { classes: 'legend-label', content: v[1] }),
+                  ]))
+                })
+              } else {
+                legendSection.push(Faerun.createElement('div', { classes: 'legend-element-range' }, [
+                  ...Faerun.createColorScale(s.legend[index]),
+                  Faerun.createElement('div', { 
+                    classes: 'legend-label max', 
+                    content: s.max_legend_label[index] 
+                  }),
+                  Faerun.createElement('div', {
+                    classes: 'legend-label min',
+                    content: s.min_legend_label[index] 
+                  })
+                ]))
+              }
+
+              let series = [];
+              for (var i = 0; i < s.series_title.length; i++) {
+                series.push(
+                  Faerun.createElement('option', { 
+                    value: i, 
+                    content: s.series_title[i], 
+                    selected: i === index
+                  })
+                );
+              }
+
+
+              let sectionHeader = Faerun.createElement(
+                'h3', { content: s.legend_title[index] }
+              );
+              sectionHeader.addEventListener('click', e => {
+                this.toggleLegendSection(s.name);
+              });
+
+              let seriesSelector = Faerun.createElement(
+                'select', 
+                { 
+                  id: `select-${s.name}`, 
+                  classes: 'series-selector',
+                  'data-name': s.name,
+                  hidden: s.series_title.length < 2,
+                }, 
+                [ ...series ]
+              );
+              seriesSelector.addEventListener('change', e => {
+                let value = document.getElementById(`select-${s.name}`).value;
+                this.changeSeries(value, s.name);
+              });
+
+
+              container.appendChild(
+                Faerun.createElement(
+                  'div', { id: `legend-${s.name}`, 
+                  classes: 'legend-section', 
+                  'data-name': `${s.name}` },
+                  [ sectionHeader, seriesSelector, ...legendSection ]
+                )
+              );
+            }
+          });
+        }
+
+        toggleLegendSection(name) {
+          let section = document.getElementById('legend-' + name);
+          let geometry = this.pointHelpers[this.phIndexMap[name]].geometry;
+          let isVisible = geometry.isVisible;
+
+          if (isVisible) {
+            geometry.hide();
+            section.style.opacity = 0.5;
+          } else {
+            geometry.show();
+            section.style.opacity = 1.0;
+          }
+        }
+
+        getSelectedIndex(source, index) {
+          let selectedIndex = null;
+          this.selectedItems.forEach((item, i) => {
+            if (item.source == source && item.item.index == index) {
+              selectedIndex = i;
+              return;
+            }
+          });
+          return selectedIndex;
+        }
+
+        updateSelected(current = -1) {
+          let n = this.selectedItems.length
+          // Hide the container if no items are selected
+          if (n === 0) {
+            this.el.selected.style.display = 'none';
+            return;
+          } else {
+            this.el.selected.style.display = 'block';
+          }
+
+          if (current < 0) current = n - 1;
+          if (current >= n) current = 0;
+          this.selectedCurrent = current;
+
+          let item = this.selectedItems[current];
+
+          let phIndex = this.ohIndexToPhIndex[item.source];
+          let meta = this.scatterMeta[phIndex];
+          let phName = this.ohIndexToPhName[item.source];
+          let seriesState = this.seriesState[phName];
+
+          let fullLabel = data[phName].labels[item.item.index].split('__');
+
+          let labelIndex = meta.label_index[seriesState];
+          let titleIndex = meta.title_index[seriesState];
+          let selectedLabels = meta.selected_labels[seriesState];
+
+          this.sdSelected.draw(fullLabel[labelIndex], 'img', 'dark', img => {
+            this.el.selectedCurrent.innerHTML = current + 1;
+            this.el.selectedTotal.innerHTML = n;
+            this.el.selectedTitle.innerHTML = fullLabel[titleIndex];
+
+            this.setSelectedContent(fullLabel, labelIndex, selectedLabels, img);
+          });
+
+          // Remove all indicators
+          this.selectedIndicators.forEach(indicator => {
+            indicator.element.parentElement.removeChild(indicator.element);
+          });
+          this.selectedIndicators.length = 0;
+
+          // Add the indicator for this object
+          let indicatorElement = Faerun.createElement(
+            'div', 
+            { classes: 'selected-indicator' },
+            [
+              Faerun.createElement('div', { classes: 'crosshair-x' }),
+              Faerun.createElement('div', { classes: 'crosshair-y' })
+            ]
+          );
+
+          this.body.appendChild(indicatorElement);
+          this.selectedIndicators.push({
+            element: indicatorElement,
+            index: item.item.index,
+            ohIndex: item.source,
+            phIndex: phIndex
+          });
+          this.updateSelectedIndicators();
+        }
+
+        updateSelectedIndicators() {
+          this.selectedIndicators.forEach(indicator => {
+            let pointSize = this.pointHelpers[indicator.phIndex].getPointSize();
+            let screenPosition = this.octreeHelpers[indicator.ohIndex]
+                                     .getScreenPosition(indicator.index);
+            
+            // Make the crosshairs larger than the point
+            pointSize = Faerun.getMax([pointSize / window.devicePixelRatio, 10 / window.devicePixelRatio]);
+            pointSize *= 1.25;
+            let halfPointSize = pointSize / 2.0;
+            indicator.element.style.left = (screenPosition[0] - halfPointSize) + 'px';
+            indicator.element.style.top = (screenPosition[1] - halfPointSize) + 'px';
+            indicator.element.style.width = pointSize + 'px';
+            indicator.element.style.height = pointSize + 'px';
+          });
+        }
+
+        updateTitle(first = false) {
+          if (this.el.title === undefined) return;
+
+          let bb = this.el.title.getBoundingClientRect();
+          let scenePosition = new Lore.Math.Vector3f(
+            (this.min[0] + this.min[0]) / 2.0, this.min[1], 
+            (this.min[2] + this.min[2]) / 2.0
+          );
+
+          let screenPosition = this.lore.controls.camera.sceneToScreen(scenePosition, this.lore);
+          
+          this.el.title.style.left = (screenPosition[0] - (bb.width / 2.0)) + 'px';
+          this.el.title.style.top = (screenPosition[1] - bb.height) + 'px';
+
+          if (first) this.el.title.classList.add('show');
+        }
+
+        updateXAxis(first = false) {
+          if (this.el.xAxis === undefined) return;
+          
+          let bb = this.el.xAxis.getBoundingClientRect();
+          let scenePosition = new Lore.Math.Vector3f(
+            (this.min[0] + this.min[0]) / 2.0, this.min[1], 
+            (this.min[2] + this.min[2]) / 2.0
+          );
+
+          let screenPosition = this.lore.controls.camera.sceneToScreen(scenePosition, this.lore);
+          
+          this.el.xAxis.style.left = (screenPosition[0] - (bb.width / 2.0)) + 'px';
+          this.el.xAxis.style.top = (screenPosition[1]) + 'px';
+
+          if (first) this.el.xAxis.classList.add('show');
+        }
+
+        updateYAxis(first = false) {
+          if (this.el.yAxis === undefined) return;
+            
+          let bb = this.el.yAxis.getBoundingClientRect();
+          let scenePosition = new Lore.Math.Vector3f(
+            this.min[0], (this.min[1] + this.min[1]) / 2.0, 
+            (this.min[2] + this.min[2]) / 2.0
+          );
+          
+          let screenPosition = this.lore.controls.camera.sceneToScreen(scenePosition, this.lore);
+          
+          this.el.yAxis.style.left = (screenPosition[0] - bb.height) + 'px';
+          this.el.yAxis.style.top = (screenPosition[1] - bb.width / 2.0) + 'px';
+
+          if (first) this.el.yAxis.classList.add('show');
+        }
+
+        changeSeries(value, name) {
+          value = parseInt(value);
+          this.seriesState[name] = value;
+          this.renderLegend();
+
+          this.pointHelpers[this.phIndexMap[name]].setRGBFromArrays(
+            data[name]['colors'][value].r, 
+            data[name]['colors'][value].g, 
+            data[name]['colors'][value].b
+          );
+
+          if (data[name]['s']) {
+            if (data[name]['s'][value]) {
+              this.pointHelpers[this.phIndexMap[name]].setSize(
+                data[name]['s'][value]
+              );
+            } else {
+              this.pointHelpers[this.phIndexMap[name]].setSize(1.0);
+            }
+          }
+        }
+
+        search(term) {
+          let results = {}
+          let re = new RegExp(term, 'i');
+
+          Object.keys(data).forEach(name => {
+            if (!('labels' in data[name])) return;
+            results[name] = []
+            data[name]['labels'].forEach((label, i) => {
+              if (re.test(label))
+                results[name].push(i)
+            });
+          });
+
+          return results;
+        }
+
+        static createColorBox(value) {
+          return Faerun.createElement(
+            'div', 
+            { 
+              classes: 'color-box', 
+              style: `background-color: rgba(${value[0] * 255}, ${value[1] * 255 }, ${value[2] * 255 }, ${value[3] });
+                      border-color: rgba(${value[0] * 255 }, ${value[1] * 255 }, ${value[2] * 255 }, ${value[3] })`
+            }
+          );
+        }
+
+        static createColorScale(values) {
+          let scale = [];
+
+          values.forEach(value => {
+            scale.push(
+              Faerun.createElement(
+                'div', 
+                { 
+                  classes: 'color-stripe', 
+                  style: `background-color: rgba(${value[0][0] * 255}, ${value[0][1] * 255}, ${value[0][2] * 255}, ${value[0][3]});
+                          border-color: rgba(${value[0][0] * 255}, ${value[0][1] * 255}, ${value[0][2] * 255}, ${value[0][3]})`,
+                  alt: value[1]
+                }
+              ),
+            )
+          });
+
+          return scale;
+        }
+        
+        static createElement(tag, values = {}, children = []) {
+          let element = document.createElement(tag);
+
+          for (const key of Object.keys(values)) {
+            if (key === 'classes')
+              element.classList.add(...values[key].split(' '));
+            else if (key === 'content')
+              element.innerHTML = values[key];
+            else if (key === 'hidden') {
+              if (values[key])
+                element.setAttribute('hidden', true);
+            }
+            else if (key === 'selected') {
+              if (values[key])
+                element.setAttribute('selected', true);
+            }
+            else
+              element.setAttribute(key, values[key]);
+          }
+
+          if (children) {
+            if (Array.isArray(children)) {
+              children.forEach(child => {
+                element.appendChild(child);
+              })
+            } else {
+              element.appendChild(children);
+            }
+          }
+
+          return element;
+        }
+
+        static bindElements() {
+          let result = {};
+          document.querySelectorAll('[data-bind]').forEach(e => {
+            result[e.getAttribute('data-bind')] = e;
+          });
+          return result;
+        }
+
+        static getMin(arr, other = Number.MAX_VALUE) {
+          let m = Number.MAX_VALUE;
+          for (var i = 0; i < arr.length; i++)
+              if (arr[i] < m) m = arr[i];
+          
+          if (m < other) return m;
+          return other;
+        }
+
+        static getMax(arr, other = -Number.MAX_VALUE) {
+          let m = -Number.MAX_VALUE;
+          for (var i = 0; i < arr.length; i++)
+              if (arr[i] > m) m = arr[i];
+          
+          if (m > other) return m;
+          return other;
+        }
+      }
+
+      let f = new Faerun();
+    </script>
+  </body>
+</html>

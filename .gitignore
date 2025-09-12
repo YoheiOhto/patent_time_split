@@ -1,22 +1,23 @@
 log/
-data/raw
 
+*.pkl
+*.pickle
+
+data/raw
 data/defreezed
 
-data/processed/*/*.pkl
-data/processed/*/*.pickle
+data/processed/drugbank/250106_drugbank_formatted.csv
+data/processed/drugbank/250106_drugbank_onlysmiles.csv
 data/processed/surechembl
-data/processed/tdc/*/*.pickle
-data/processed/moleculenet/*/*/*.pickle
-
-data/result/tmap/**/*.pkl
 
 src/__pycache__/
 
 # too large files
-data/result/tmap/**/*.html
+data/result/fig2-fig3-fig4-fig5-fig7_tmap/fig2-fig3-fig4-fig5-surechembl/*/surechembl_*.html
 data/processed/moleculenet/moleculenet_patentdate/chembl/pre_mol_dataset.tsv
 data/processed/moleculenet/moleculenet_patentdate/chembl/date_dataset.tsv
+data/processed/all_date_datasets_for_tox_benchmark.tsv
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
