@@ -1,6 +1,6 @@
 import os
 import pickle
-from datetime import datetime
+from datetime import datetime, timedelta
 from logging import DEBUG, Formatter, getLogger, handlers
 from pathlib import Path
 import numpy as np
@@ -65,6 +65,14 @@ def convert_date_to_decimal(date_str):
     day_of_year = (date_obj - datetime(year, 1, 1)).days + 1
     progress = day_of_year / days_in_year
     return round(year + progress, 3)
+
+def convert_decimal_to_date(decimal_year):
+    year = int(decimal_year)
+    fraction = decimal_year - year
+    days_in_year = 366 if is_leap_year(year) else 365
+    day_of_year = round(fraction * days_in_year)
+    date_obj = datetime(year, 1, 1) + timedelta(days=day_of_year - 1)
+    return date_obj.strftime("%Y%m%d")
 
 def predict_task_equal_class(y):
     unique_values = np.unique(y)
