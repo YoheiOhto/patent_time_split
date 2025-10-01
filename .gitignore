@@ -17,7 +17,7 @@ data/result/fig2-fig3-fig4-fig5-fig7_tmap/fig2-fig3-fig4-fig5-surechembl/*/surec
 data/processed/moleculenet/moleculenet_patentdate/chembl/pre_mol_dataset.tsv
 data/processed/moleculenet/moleculenet_patentdate/chembl/date_dataset.tsv
 data/processed/all_date_datasets_for_tox_benchmark.tsv
-
+notebook/preprocess/6-upload-huggingface.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
