@@ -9,6 +9,7 @@ data/defreezed
 data/processed/drugbank/250106_drugbank_formatted.csv
 data/processed/drugbank/250106_drugbank_onlysmiles.csv
 data/processed/surechembl
+data/processed/pubchem
 
 src/__pycache__/
 
