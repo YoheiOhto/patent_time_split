@@ -15,7 +15,7 @@ data/processed/pubmed
 src/__pycache__/
 
 # too large files
-data/result/fig2-fig3-fig4-fig5-fig7_tmap/fig2-fig3-fig4-fig5-surechembl/*/surechembl_*.html
+data/result/*/*/*/surechembl_*.html
 data/processed/moleculenet/moleculenet_patentdate/chembl/pre_mol_dataset.tsv
 data/processed/moleculenet/moleculenet_patentdate/chembl/date_dataset.tsv
 data/processed/all_date_datasets_for_tox_benchmark.tsv
